@@ -8,12 +8,14 @@ TOKEN = getenv("BOT_TOKEN")
 
 from aiogram import Bot, Dispatcher
 from app.handlers import router
+from app.database.models import create_tables
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 
 async def main():
+    await create_tables()
     dp.include_router(router)
     await dp.start_polling(bot)
 
