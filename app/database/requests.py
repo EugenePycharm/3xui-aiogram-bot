@@ -1,4 +1,4 @@
-from app.database.models import async_session, User, Server, Plan, Subscription, SubscriptionStatus
+from app.database.models import async_session, User, Server, Plan, Subscription, SubscriptionStatus, Payment, PaymentStatus
 from sqlalchemy import select, update
 from datetime import datetime, timedelta
 
@@ -104,3 +104,97 @@ async def get_referrals_count(user_id):
         from sqlalchemy import func
         result = await session.execute(select(func.count(User.id)).where(User.referrer_id == user_id))
         return result.scalar()
+
+
+async def create_payment(
+    user_id: int,
+    amount: float,
+    currency: str = "RUB",
+    status: PaymentStatus = PaymentStatus.SUCCEEDED,
+    provider_id: str = None
+) -> Payment:
+    """
+    Создание записи о платеже.
+    
+    Args:
+        user_id: ID пользователя в БД
+        amount: Сумма платежа
+        currency: Валюта
+        status: Статус платежа
+        provider_id: ID платежа в платёжной системе
+    
+    Returns:
+        Объект Payment
+    """
+    async with async_session() as session:
+        payment = Payment(
+            user_id=user_id,
+            amount=amount,
+            currency=currency,
+            status=status,
+            provider_id=provider_id
+        )
+        session.add(payment)
+        await session.commit()
+        return payment
+
+
+async def update_subscription_email(
+    subscription_id: int,
+    new_email: str,
+    new_uuid: str,
+    new_key_url: str,
+    new_inbound_id: int
+) -> bool:
+    """
+    Обновление данных подписки (email, uuid, key_url, inbound_id).
+    
+    Args:
+        subscription_id: ID подписки
+        new_email: Новый email
+        new_uuid: Новый UUID
+        new_key_url: Новая ссылка ключа
+        new_inbound_id: Новый inbound ID
+    
+    Returns:
+        True если успешно
+    """
+    async with async_session() as session:
+        sub = await session.get(Subscription, subscription_id)
+        if sub:
+            sub.email = new_email
+            sub.uuid = new_uuid
+            sub.key_url = new_key_url
+            sub.inbound_id = new_inbound_id
+            await session.commit()
+            return True
+        return False
+
+
+async def update_subscription_plan(
+    subscription_id: int,
+    plan_id: int,
+    duration_days: int,
+    data_limit_gb: int
+) -> bool:
+    """
+    Обновление плана подписки с продлением срока.
+    
+    Args:
+        subscription_id: ID подписки
+        plan_id: Новый ID плана
+        duration_days: Количество дней для добавления
+        data_limit_gb: Лимит данных в ГБ
+    
+    Returns:
+        True если успешно
+    """
+    async with async_session() as session:
+        sub = await session.get(Subscription, subscription_id)
+        if sub:
+            sub.plan_id = plan_id
+            # Продлеваем с текущего момента, а не от старого срока
+            sub.expires_at = datetime.now() + timedelta(days=duration_days)
+            await session.commit()
+            return True
+        return False
