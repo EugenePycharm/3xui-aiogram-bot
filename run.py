@@ -1,10 +1,15 @@
 import asyncio
 import logging
-from os import getenv
+import os
 from dotenv import load_dotenv
 
+# Load .env from current directory
 load_dotenv()
-TOKEN = getenv("BOT_TOKEN")
+TOKEN = os.getenv("BOT_TOKEN")
+
+if not TOKEN:
+    print("Error: BOT_TOKEN not found in .env file.")
+    exit(1)
 
 from aiogram import Bot, Dispatcher
 from app.handlers import router
