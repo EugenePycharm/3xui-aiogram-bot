@@ -102,11 +102,21 @@ class Payment(Base):
     currency: Mapped[str] = mapped_column(String(10), default="RUB")
     status: Mapped[PaymentStatus] = mapped_column(String(20), default=PaymentStatus.PENDING)
     provider_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True) # e.g. PaymentIntentNullable
-    
+
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="payments")
+
+
+class Admin(Base):
+    __tablename__ = "admins"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tg_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True, nullable=False)
+    username: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 async def create_tables():
     async with engine.begin() as conn:
