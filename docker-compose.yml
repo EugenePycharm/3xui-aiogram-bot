@@ -1,0 +1,116 @@
+# Docker Compose для VPN Telegram Bot
+# Поддержка Ubuntu и Windows (Docker Desktop)
+
+services:
+  # Инициализация базы данных
+  db-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vpn-db-init
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///data/bot.db
+      - SERVER_API_URL=${SERVER_API_URL}
+      - SERVER_USERNAME=${SERVER_USERNAME}
+      - SERVER_PASSWORD=${SERVER_PASSWORD}
+      - SERVER_LOCATION=${SERVER_LOCATION:-Default}
+      - SERVER_NAME=${SERVER_NAME:-Server-1}
+      - SERVER_MAX_CLIENTS=${SERVER_MAX_CLIENTS:-50}
+    volumes:
+      - bot-data:/app/data
+    networks:
+      - bot-network
+    command: ["python", "init_db.py"]
+    restart: "no"
+
+  # Основной бот для пользователей
+  user-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vpn-user-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///data/bot.db
+      - LOG_LEVEL=INFO
+    volumes:
+      # Персистентное хранилище базы данных
+      - bot-data:/app/data
+      # Логи для отладки
+      - bot-logs:/app/logs
+    networks:
+      - bot-network
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Админ-бот для управления
+  admin-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    container_name: vpn-admin-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///data/bot.db
+      - LOG_LEVEL=INFO
+    volumes:
+      # Общая база данных с user-bot
+      - bot-data:/app/data
+      # Логи для отладки
+      - admin-logs:/app/logs
+    networks:
+      - bot-network
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  # Изолированная сеть для ботов
+  bot-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  # База данных - персистентное хранилище
+  bot-data:
+    name: vpn-bot-data
+    driver: local
+  # Логи user-бота
+  bot-logs:
+    name: vpn-bot-logs
+    driver: local
+  # Логи админ-бота
+  admin-logs:
+    name: vpn-admin-logs
+    driver: local

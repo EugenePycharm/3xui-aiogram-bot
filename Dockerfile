@@ -1,0 +1,63 @@
+# VPN Telegram Bot - User Bot Dockerfile
+# Multi-stage build for production security and optimization
+
+# Stage 1: Builder
+FROM python:3.12-slim-bookworm AS builder
+
+# Install uv for fast dependency management
+RUN pip install --no-cache-dir uv
+
+# Set working directory
+WORKDIR /build
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install dependencies to virtual environment
+RUN uv venv /opt/venv && \
+    VIRTUAL_ENV=/opt/venv uv pip install -r pyproject.toml
+
+# Stage 2: Production
+FROM python:3.12-slim-bookworm AS production
+
+# Security: Create non-root user
+RUN groupadd --gid 1000 botgroup && \
+    useradd --uid 1000 --gid botgroup --shell /bin/bash --create-home botuser
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH" \
+    VIRTUAL_ENV=/opt/venv
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+
+# Set working directory
+WORKDIR /app
+
+# Copy application code
+COPY --chown=botuser:botgroup run.py ./
+COPY --chown=botuser:botgroup init_db.py ./
+COPY --chown=botuser:botgroup add_server_from_env.py ./
+COPY --chown=botuser:botgroup app/ ./app/
+
+# Create directories for database and logs
+RUN mkdir -p /app/data /app/logs && \
+    chown -R botuser:botgroup /app
+
+# Switch to non-root user
+USER botuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import sys; sys.exit(0)" || exit 1
+
+# Run the bot
+CMD ["python", "run.py"]

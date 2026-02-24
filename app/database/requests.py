@@ -53,6 +53,50 @@ async def get_active_server():
     async with async_session() as session:
         return await session.scalar(select(Server).where(Server.is_active == True))
 
+
+async def get_servers_with_stats() -> list:
+    """
+    Получить все активные серверы с количеством подписок.
+
+    Returns:
+        Список кортежей (server, subscriptions_count)
+    """
+    from sqlalchemy import func
+    async with async_session() as session:
+        result = await session.execute(
+            select(
+                Server,
+                func.count(Subscription.id).label('sub_count')
+            )
+            .outerjoin(Subscription, Server.id == Subscription.server_id)
+            .where(Server.is_active == True)
+            .group_by(Server.id)
+            .order_by(Server.id)
+        )
+        return result.all()
+
+
+async def get_subscription_count_for_server(server_id: int) -> int:
+    """
+    Получить количество активных подписок на сервере.
+
+    Args:
+        server_id: ID сервера
+
+    Returns:
+        Количество подписок
+    """
+    from sqlalchemy import func
+    async with async_session() as session:
+        result = await session.execute(
+            select(func.count(Subscription.id))
+            .where(
+                Subscription.server_id == server_id,
+                Subscription.status == SubscriptionStatus.ACTIVE
+            )
+        )
+        return result.scalar() or 0
+
 async def get_user_subscription(user_id):
     async with async_session() as session:
         stmt = select(Subscription).where(

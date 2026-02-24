@@ -31,7 +31,7 @@ class ReferralService:
     ) -> None:
         """
         Обработка реферальной ссылки при регистрации нового пользователя.
-        
+
         Args:
             new_user_id: ID нового пользователя
             referrer_id: ID пригласившего (referrer)
@@ -39,15 +39,32 @@ class ReferralService:
             trial_plan: Trial план
             bot: Экземпляр бота
         """
-        if not referrer_id or not server or not trial_plan:
+        logger.info(f"process_referral: new_user={new_user_id}, referrer_id={referrer_id}")
+
+        if not referrer_id:
+            logger.warning("process_referral: referrer_id не указан")
             return
 
         ref_user = await rq.select_user(referrer_id)
         if not ref_user:
+            logger.warning(f"process_referral: реферер {referrer_id} не найден в БД")
             return
 
-        # Если реферер ещё не получал бонус — продлеваем подписку
-        if not ref_user.received_bonus:
+        logger.info(f"process_referral: реферер найден - tg_id={ref_user.tg_id}, received_bonus={ref_user.received_bonus}")
+
+        # Проверяем, получал ли реферер бонус ранее
+        if ref_user.received_bonus:
+            # Если уже получал бонус — начисляем деньги
+            logger.info(f"process_referral: реферер {ref_user.tg_id} уже получил бонус, начисляем деньги")
+            await ReferralService._grant_balance_bonus(
+                ref_user=ref_user,
+                bot=bot
+            )
+            return
+
+        # Если сервер и trial план доступны — пытаемся начислить бонус
+        if server and trial_plan:
+            logger.info(f"process_referral: начисление бонуса рефереру {ref_user.tg_id}")
             await ReferralService._grant_subscription_bonus(
                 ref_user=ref_user,
                 server=server,
@@ -55,11 +72,13 @@ class ReferralService:
                 bot=bot
             )
         else:
-            # Если уже получал бонус — начисляем деньги
+            # Нет сервера или trial плана — начисляем деньги
+            logger.warning(f"process_referral: нет сервера или trial плана, начисляем деньги рефереру {ref_user.tg_id}")
             await ReferralService._grant_balance_bonus(
                 ref_user=ref_user,
                 bot=bot
             )
+            await rq.set_user_bonus_received(ref_user.id)
 
     @staticmethod
     async def _grant_subscription_bonus(
@@ -70,7 +89,7 @@ class ReferralService:
     ) -> None:
         """
         Начисление бонуса в виде продления подписки.
-        
+
         Args:
             ref_user: Пользователь-реферер
             server: Сервер
@@ -78,9 +97,16 @@ class ReferralService:
             bot: Экземпляр бота
         """
         ref_sub = await rq.get_user_subscription(ref_user.tg_id)
-        
+
         if not ref_sub:
-            # Нет активной подписки — нечего продлевать
+            # Нет активной подписки — начисляем деньги на баланс
+            logger.info(f"У реферера {ref_user.tg_id} нет подписки, начисляем денежный бонус")
+            await ReferralService._grant_balance_bonus(
+                ref_user=ref_user,
+                bot=bot
+            )
+            # Помечаем бонус как использованный
+            await rq.set_user_bonus_received(ref_user.id)
             return
 
         success = await SubscriptionService.extend_user_subscription(
@@ -94,13 +120,21 @@ class ReferralService:
         if success:
             # Помечаем бонус как использованный
             await rq.set_user_bonus_received(ref_user.id)
-            
+
             # Уведомляем реферера
             await ReferralService._notify_subscription_bonus(
                 referrer_id=ref_user.tg_id,
                 subscription=ref_sub,
                 bot=bot
             )
+        else:
+            # Если продление не удалось, начисляем деньги
+            logger.warning(f"Не удалось продлить подписку рефереру {ref_user.tg_id}, начисляем деньги")
+            await ReferralService._grant_balance_bonus(
+                ref_user=ref_user,
+                bot=bot
+            )
+            await rq.set_user_bonus_received(ref_user.id)
 
     @staticmethod
     async def _grant_balance_bonus(

@@ -27,12 +27,12 @@ BOT_USERNAME = "VPNLESS_VPN_BOT"
 async def start_command(message: Message) -> None:
     """
     Обработчик команды /start.
-    
+
     Args:
         message: Сообщение от пользователя
     """
     referrer_id = None
-    
+
     # Получаем аргументы команды (после /start)
     args = message.text.split() if message.text else []
     if len(args) > 1 and args[1].isdigit():
@@ -81,12 +81,20 @@ async def _handle_new_user(
     trial_plan = await rq.get_trial_plan()
     server = await rq.get_active_server()
 
-    if trial_plan and server:
+    logger.info(f"Trial plan: {trial_plan}, Server: {server}")
+
+    # Проверяем наличие активной подписки у пользователя
+    existing_sub = await rq.get_user_subscription(message.from_user.id)
+
+    if trial_plan and server and not existing_sub:
+        logger.info(f"Активация trial для пользователя {message.from_user.id}")
         success, sub_link = await SubscriptionService.activate_trial(
             tg_id=message.from_user.id,
             trial_plan=trial_plan,
             server=server
         )
+
+        logger.info(f"Результат активации: success={success}, sub_link={sub_link}")
 
         if success and sub_link:
             msg += (
@@ -94,9 +102,23 @@ async def _handle_new_user(
                 f"Моя подписка: [Нажать]({sub_link})\n"
                 f"Ваш ключ в профиле."
             )
+        else:
+            msg += "\n\n⚠️ Не удалось активировать пробный период. Попробуйте позже."
+    elif existing_sub:
+        msg += "\n\nУ вас уже есть активная подписка."
+    else:
+        if not trial_plan:
+            logger.warning("Trial план не найден")
+            msg += "\n\n⚠️ Пробный план не найден в базе данных."
+        if not server:
+            logger.warning("Активный сервер не найден")
+            msg += "\n\n⚠️ Активные серверы отсутствуют."
+        if not trial_plan or not server:
+            msg += "\n\nПопробуйте позже или обратитесь в поддержку."
 
-    # Обработка реферала
-    if referrer_id and server and trial_plan:
+    # Обработка реферала (всегда, независимо от активации trial)
+    if referrer_id:
+        logger.info(f"Обработка реферала: new_user={message.from_user.id}, referrer={referrer_id}")
         bot = Bot.from_current()
         await ReferralService.process_referral(
             new_user_id=message.from_user.id,

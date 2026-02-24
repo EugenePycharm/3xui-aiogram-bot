@@ -1,12 +1,27 @@
+import os
 from datetime import datetime
 from enum import Enum as PyEnum
 from typing import Optional, List
 
+from dotenv import load_dotenv
 from sqlalchemy import BigInteger, String, ForeignKey, DateTime, Boolean, DECIMAL, Integer, func
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-engine = create_async_engine(url='sqlite+aiosqlite:///db.sqlite3')
+# Load environment variables
+load_dotenv()
+
+# Get database URL from environment or use default
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///data/bot.db")
+
+# Ensure data directory exists for SQLite
+if DATABASE_URL.startswith("sqlite"):
+    db_path = DATABASE_URL.split("///", 1)[-1]
+    if db_path:
+        import pathlib
+        pathlib.Path(os.path.dirname(db_path)).mkdir(parents=True, exist_ok=True)
+
+engine = create_async_engine(url=DATABASE_URL)
 
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 

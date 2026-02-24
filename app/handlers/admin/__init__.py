@@ -149,3 +149,17 @@ async def show_subscriptions_list(message: Message) -> None:
         text += f"   Статус: {status_value}\n\n"
 
     await message.answer(text, parse_mode="HTML")
+
+
+@router.message(F.text == "➕ Добавить сервер")
+async def add_server_button_handler(message: Message, state: FSMContext) -> None:
+    """Обработчик кнопки «➕ Добавить сервер»."""
+    await state.clear()
+
+    await message.answer(
+        "📡 <b>Добавление сервера</b>\n\n"
+        "Введите <b>название сервера</b> (например, Netherlands-1):\n"
+        "(или /cancel для отмены)",
+        parse_mode="HTML"
+    )
+    await state.set_state("admin_add_server_name")

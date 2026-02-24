@@ -18,8 +18,9 @@ def get_admin_main_keyboard() -> ReplyKeyboardMarkup:
     )
     builder.row(
         KeyboardButton(text="➕ Создать подписку"),
+        KeyboardButton(text="➕ Добавить сервер"),
     )
-    builder.adjust(2, 2, 1)
+    builder.adjust(2, 2, 2)
     return builder.as_markup(resize_keyboard=True)
 
 

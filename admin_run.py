@@ -4,6 +4,7 @@
 import asyncio
 import logging
 import os
+import sys
 
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, F
@@ -19,10 +20,11 @@ from app.middlewares.admin_auth import AdminAuthMiddleware
 load_dotenv()
 
 TOKEN = os.getenv("ADMIN_BOT_TOKEN")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
 if not TOKEN:
     logging.error("Error: ADMIN_BOT_TOKEN not found in .env file.")
-    exit(1)
+    sys.exit(1)
 
 # Инициализация бота и диспетчера
 bot = Bot(token=TOKEN)
@@ -39,13 +41,17 @@ dp.callback_query.middleware(AdminAuthMiddleware())
 
 async def main() -> None:
     """Основная функция запуска админ-бота."""
-    await create_tables()
-
-    # Логирование
+    # Настройка логирования
     logging.basicConfig(
-        level=logging.DEBUG,  # Изменено на DEBUG для отладки
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        level=getattr(logging, LOG_LEVEL, logging.INFO),
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler(sys.stdout)]
     )
+    
+    logging.info("Starting VPN Admin Bot...")
+    logging.info(f"Log level: {LOG_LEVEL}")
+
+    await create_tables()
 
     bot_info = await bot.get_me()
     logging.info(f"Admin bot started as @{bot_info.username}")
