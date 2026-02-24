@@ -60,7 +60,7 @@ async def get_servers_keyboard(servers_with_stats: list) -> InlineKeyboardMarkup
 
         # Формируем текст кнопки
         location_flag = _get_location_flag(server.location)
-        button_text = f"{indicator} {location_flag} {server.name} ({sub_count}/{max_clients})"
+        button_text = f"{location_flag} {server.name}  {indicator}"
 
         keyboard.add(
             InlineKeyboardButton(
