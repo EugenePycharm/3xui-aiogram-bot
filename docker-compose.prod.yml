@@ -1,0 +1,138 @@
+# Docker Compose для VPN Telegram Bot с PostgreSQL
+# Для продакшена с высокой нагрузкой
+# Использование: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  # PostgreSQL база данных
+  postgres:
+    image: postgres:16-alpine
+    container_name: vpn-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-vpnbot}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_this_password}
+      POSTGRES_DB: ${DB_NAME:-vpnbot}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-vpnbot} -d ${DB_NAME:-vpnbot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Основной бот для пользователей
+  user-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vpn-user-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-vpnbot}:${DB_PASSWORD:-change_this_password}@postgres:5432/${DB_NAME:-vpnbot}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - bot-logs:/app/logs
+    networks:
+      - bot-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Админ-бот для управления
+  admin-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    container_name: vpn-admin-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-vpnbot}:${DB_PASSWORD:-change_this_password}@postgres:5432/${DB_NAME:-vpnbot}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - admin-logs:/app/logs
+    networks:
+      - bot-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Инициализация базы данных
+  db-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vpn-db-init
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-vpnbot}:${DB_PASSWORD:-change_this_password}@postgres:5432/${DB_NAME:-vpnbot}
+    volumes:
+      - bot-logs:/app/logs
+    networks:
+      - bot-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      python -c "
+      import asyncio;
+      import sys;
+      sys.path.insert(0, '.');
+      from app.database.models import create_tables;
+      asyncio.run(create_tables());
+      print('Database initialized successfully');
+      "
+    profiles:
+      - init
+
+networks:
+  bot-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  postgres-data:
+    name: vpn-postgres-data
+    driver: local
+  bot-logs:
+    name: vpn-bot-logs
+    driver: local
+  admin-logs:
+    name: vpn-admin-logs
+    driver: local

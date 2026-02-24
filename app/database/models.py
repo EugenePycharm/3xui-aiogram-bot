@@ -1,12 +1,27 @@
+import os
 from datetime import datetime
 from enum import Enum as PyEnum
 from typing import Optional, List
 
+from dotenv import load_dotenv
 from sqlalchemy import BigInteger, String, ForeignKey, DateTime, Boolean, DECIMAL, Integer, func
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-engine = create_async_engine(url='sqlite+aiosqlite:///db.sqlite3')
+# Load environment variables
+load_dotenv()
+
+# Get database URL from environment or use default
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///data/bot.db")
+
+# Ensure data directory exists for SQLite
+if DATABASE_URL.startswith("sqlite"):
+    db_path = DATABASE_URL.split("///", 1)[-1]
+    if db_path:
+        import pathlib
+        pathlib.Path(os.path.dirname(db_path)).mkdir(parents=True, exist_ok=True)
+
+engine = create_async_engine(url=DATABASE_URL)
 
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
@@ -102,11 +117,21 @@ class Payment(Base):
     currency: Mapped[str] = mapped_column(String(10), default="RUB")
     status: Mapped[PaymentStatus] = mapped_column(String(20), default=PaymentStatus.PENDING)
     provider_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True) # e.g. PaymentIntentNullable
-    
+
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="payments")
+
+
+class Admin(Base):
+    __tablename__ = "admins"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tg_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True, nullable=False)
+    username: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 async def create_tables():
     async with engine.begin() as conn:
