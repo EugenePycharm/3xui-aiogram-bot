@@ -53,16 +53,13 @@ else
     docker run --rm \
         -v vpn-bot-data:/data \
         -v "$(pwd)/$BACKUP_DIR":/backup \
-        alpine cp /data/bot.db /backup/
-    
-    # Rename to dated backup
-    mv "$BACKUP_DIR/bot.db" "$BACKUP_FILE"
-    
+        alpine cp /data/bot.db /backup/sqlite_bot_${DATE}.db
+
     print_success "SQLite backup created: $BACKUP_FILE"
-    
+
     # Restart containers
     print_info "Restarting containers..."
-    docker compose start
+    docker compose up -d
     print_success "Containers restarted"
 fi
 

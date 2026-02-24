@@ -133,19 +133,21 @@ cmd_build() {
 cmd_clean() {
     print_warning "This will remove all containers, volumes, and images!"
     read -p "Are you sure? (y/N): " confirm
-    
+
     if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
         print_info "Cleaning up..."
-        
+
         COMPOSE_CMD=$(get_compose_cmd)
         $COMPOSE_CMD -f $COMPOSE_FILE down -v --remove-orphans
-        
-        # Remove volumes
-        docker volume rm -f vpn-bot-data vpn-bot-logs vpn-admin-logs 2>/dev/null || true
-        
+
+        # Remove volumes (ignore errors if not found)
+        docker volume rm vpn-bot-data 2>/dev/null || true
+        docker volume rm vpn-bot-logs 2>/dev/null || true
+        docker volume rm vpn-admin-logs 2>/dev/null || true
+
         # Remove images
-        docker rmi -f $(docker images -q vpn-bot*) 2>/dev/null || true
-        
+        docker rmi $(docker images -q pythonproject-*) 2>/dev/null || true
+
         print_success "Cleanup completed!"
     else
         print_info "Cleanup cancelled"

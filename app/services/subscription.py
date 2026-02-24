@@ -3,6 +3,8 @@
 Инкапсулирует бизнес-логику выдачи и управления подписками.
 """
 import logging
+import re
+import uuid as uuid_module
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
 
@@ -16,6 +18,64 @@ from app.database import requests as rq
 from app.utils import generate_vless_link, get_subscription_link, get_port_from_stream, extract_base_host
 
 logger = logging.getLogger(__name__)
+
+
+def _generate_safe_email(tg_id: int, plan: Optional[Plan] = None, suffix: str = "") -> str:
+    """
+    Генерация безопасного email для подписки (только латиница и цифры).
+
+    Args:
+        tg_id: Telegram ID пользователя
+        plan: Тарифный план (опционально)
+        suffix: Дополнительный суффикс (например, 'trial')
+
+    Returns:
+        Безопасный email для 3x-ui панели
+    """
+    # Преобразуем название плана в латиницу
+    plan_slug = ""
+    is_trial = False
+    
+    if plan:
+        # Проверяем если это trial план
+        if "Trial" in plan.name or "Тестовый" in plan.name:
+            plan_slug = "trial"
+            is_trial = True
+            suffix = ""  # Не добавляем суффикс для trial
+        else:
+            plan_map = {
+                "1 месяц": "1m",
+                "6 месяцев": "6m",
+                "1 год": "1y",
+                "70GB": "70gb",
+                "900GB": "900gb",
+                "2.5TB": "2500gb",
+                "2500": "2500gb",
+                "Безлимит": "unlim",
+            }
+            plan_parts = []
+            for key, value in plan_map.items():
+                if key in plan.name:
+                    plan_parts.append(value)
+            plan_slug = "_".join(plan_parts) if plan_parts else "plan"
+
+    # Генерируем уникальный ID
+    unique_id = uuid_module.uuid4().hex[:8]
+
+    # Формируем email: user_{tg_id}_{plan}_{unique_id}
+    parts = [f"user_{tg_id}"]
+    if plan_slug:
+        parts.append(plan_slug)
+    if suffix and not is_trial:
+        parts.append(suffix)
+    parts.append(unique_id)
+
+    email = "_".join(parts)
+
+    # Очищаем от любых не-ASCII символов (на всякий случай)
+    email = re.sub(r'[^a-z0-9_]', '', email.lower())
+
+    return email
 
 
 class SubscriptionService:
@@ -70,9 +130,9 @@ class SubscriptionService:
             return False, None
 
         target_inbound = inbounds[0]
-        
-        # Генерируем новый email для подписки
-        email = f"user_{tg_id}_{plan.name.replace(' ', '_')}_{int(datetime.now().timestamp())}"
+
+        # Генерируем безопасный email для подписки (только латиница)
+        email = _generate_safe_email(tg_id, plan)
         expiry_time = int((datetime.now() + timedelta(days=plan.duration_days)).timestamp() * 1000)
 
         success, _, uuid = await client.add_client(
@@ -204,7 +264,9 @@ class SubscriptionService:
             return False, None
 
         target_inbound = inbounds[0]
-        email = f"user_{tg_id}_trial"
+        
+        # Генерируем безопасный email для trial подписки
+        email = _generate_safe_email(tg_id, trial_plan, suffix="trial")
         expiry_time = int((datetime.now() + timedelta(days=7)).timestamp() * 1000)
 
         success, _, uuid = await client.add_client(
