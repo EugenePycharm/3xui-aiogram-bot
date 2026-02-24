@@ -16,5 +16,5 @@ async def support(message: Message) -> None:
         message: Сообщение от пользователя
     """
     await message.answer(
-        "По всем вопросам пишите: @berdanckin"
+        "По всем вопросам пишите: @blush_tp"
     )

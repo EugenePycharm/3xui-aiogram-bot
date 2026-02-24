@@ -78,10 +78,10 @@ async def process_buy_plan(callback: CallbackQuery, state: FSMContext) -> None:
         return
 
     await callback.message.answer(
-        "Выберите сервер (чем выше тем менее заполнен):\n"
-        "🟢 - свободно (< 50%)\n"
-        "🟡 - средняя заполненность (50-80%)\n"
-        "🔴 - почти заполнен (> 80%)",
+        "Выберите сервер:\n"
+        "🟢 - свободно\n"
+        "🟡 - средняя заполненность\n"
+        "🔴 - почти заполнен",
         reply_markup=await get_servers_keyboard(servers_with_stats)
     )
     await callback.answer()
