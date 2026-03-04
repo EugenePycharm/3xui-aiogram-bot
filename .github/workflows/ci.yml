@@ -28,6 +28,9 @@ jobs:
       - name: Установка зависимостей
         run: uv sync --dev
 
+      - name: Установка ruff
+        run: uv pip install ruff
+
       - name: Запуск ruff (линтинг)
         run: uv run ruff check app/ run.py admin_run.py
 
@@ -46,6 +49,10 @@ jobs:
     steps:
       - name: Checkout кода
         uses: actions/checkout@v4
+
+      - name: Создание .env для валидации
+        run: |
+          cp .env.example .env
 
       - name: Валидация Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
