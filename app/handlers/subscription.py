@@ -4,7 +4,6 @@
 
 import logging
 import os
-import json
 import time
 
 from aiogram import F, Router, Bot
@@ -205,23 +204,6 @@ async def _pay_with_yookassa(
     """
     amount_to_pay = plan.price - user.balance
 
-    # Receipt data для YooKassa (фискализация)
-    receipt_data = {
-        "receipt": {
-            "items": [
-                {
-                    "description": f"VPN: {plan.name} (доплата)",
-                    "quantity": 1,
-                    "amount": {"value": str(amount_to_pay), "currency": "RUB"},
-                    "vat_code": 1,
-                    "payment_mode": "full_payment",
-                    "payment_subject": "service",
-                }
-            ],
-            "tax_system_code": 1,
-        }
-    }
-
     try:
         await bot.send_invoice(
             chat_id=callback.from_user.id,
@@ -240,9 +222,8 @@ async def _pay_with_yookassa(
             ],
             start_parameter="create_invoice_vpn_sub",
             is_flexible=False,
-            need_email=True,
-            send_email_to_provider=True,
-            provider_data=json.dumps(receipt_data),
+            need_email=False,
+            send_email_to_provider=False,
         )
     except Exception as e:
         await callback.answer(
