@@ -1,6 +1,7 @@
 """
 Пакет клавиатур для VPN бота.
 """
+
 from app.keyboards.reply import main_menu, get_main_menu
 from app.keyboards.inline import (
     get_plans_keyboard,

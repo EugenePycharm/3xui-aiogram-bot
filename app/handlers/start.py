@@ -1,6 +1,7 @@
 """
 Хендлеры для команды /start и реферальной системы.
 """
+
 import logging
 
 from aiogram import F, Router, Bot
@@ -43,28 +44,21 @@ async def start_command(message: Message) -> None:
         name=message.from_user.first_name,
         surname=message.from_user.last_name,
         user_tag=message.from_user.username,
-        referrer_id=referrer_id
+        referrer_id=referrer_id,
     )
 
     if is_new:
-        await _handle_new_user(
-            message=message,
-            referrer_id=referrer_id
-        )
+        await _handle_new_user(message=message, referrer_id=referrer_id)
     else:
         await message.answer(
-            f"С возвращением, {message.from_user.first_name}!",
-            reply_markup=main_menu
+            f"С возвращением, {message.from_user.first_name}!", reply_markup=main_menu
         )
 
     # Очистка старых сообщений
     await MessageCleaner.clear_old_messages(message.from_user.id, max_messages=2)
 
 
-async def _handle_new_user(
-    message: Message,
-    referrer_id: int | None
-) -> None:
+async def _handle_new_user(message: Message, referrer_id: int | None) -> None:
     """
     Обработка нового пользователя.
 
@@ -86,9 +80,7 @@ async def _handle_new_user(
     if trial_plan and server and not existing_sub:
         logger.info(f"Активация trial для пользователя {message.from_user.id}")
         success, sub_link = await SubscriptionService.activate_trial(
-            tg_id=message.from_user.id,
-            trial_plan=trial_plan,
-            server=server
+            tg_id=message.from_user.id, trial_plan=trial_plan, server=server
         )
 
         logger.info(f"Результат активации: success={success}, sub_link={sub_link}")
@@ -115,14 +107,16 @@ async def _handle_new_user(
 
     # Обработка реферала (всегда, независимо от активации trial)
     if referrer_id:
-        logger.info(f"Обработка реферала: new_user={message.from_user.id}, referrer={referrer_id}")
+        logger.info(
+            f"Обработка реферала: new_user={message.from_user.id}, referrer={referrer_id}"
+        )
         bot = Bot.from_current()
         await ReferralService.process_referral(
             new_user_id=message.from_user.id,
             referrer_id=referrer_id,
             server=server,
             trial_plan=trial_plan,
-            bot=bot
+            bot=bot,
         )
 
     await message.answer(msg, reply_markup=main_menu, parse_mode="Markdown")
@@ -132,15 +126,15 @@ async def _handle_new_user(
 async def show_ref_link(callback: CallbackQuery) -> None:
     """
     Показ реферальной ссылки пользователя.
-    
+
     Args:
         callback: Callback query от пользователя
     """
     link = ReferralService.generate_ref_link(BOT_USERNAME, callback.from_user.id)
-    
+
     await callback.message.answer(
         f"🔗 **Ваша реферальная ссылка:**\n`{link}`\n\n"
         f"Пригласите друга и получите 7 дней подписки бесплатно!",
-        parse_mode="Markdown"
+        parse_mode="Markdown",
     )
     await callback.answer()

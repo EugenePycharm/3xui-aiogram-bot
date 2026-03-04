@@ -1,30 +1,52 @@
-from app.database.models import async_session, User, Server, Plan, Subscription, SubscriptionStatus, Payment, PaymentStatus, Admin
+from app.database.models import (
+    async_session,
+    User,
+    Server,
+    Plan,
+    Subscription,
+    SubscriptionStatus,
+    Payment,
+    PaymentStatus,
+    Admin,
+)
 from sqlalchemy import select, update, delete, func
 from datetime import datetime, timedelta
 from typing import List, Optional
 
+
 async def add_user(tg_id, name, surname, user_tag, referrer_id=None):
     async with async_session() as session:
         user = await session.scalar(select(User).where(User.tg_id == tg_id))
-        
+
         if not user:
-            new_user = User(tg_id=tg_id, full_name=f"{name} {surname or ''}".strip(), username=user_tag, referrer_id=referrer_id)
+            new_user = User(
+                tg_id=tg_id,
+                full_name=f"{name} {surname or ''}".strip(),
+                username=user_tag,
+                referrer_id=referrer_id,
+            )
             session.add(new_user)
             await session.commit()
-            return True # Created
-        return False # Exists
+            return True  # Created
+        return False  # Exists
+
 
 async def add_balance(tg_id, amount):
     async with async_session() as session:
         await session.execute(
-            update(User).where(User.tg_id == tg_id).values(balance=User.balance + amount)
+            update(User)
+            .where(User.tg_id == tg_id)
+            .values(balance=User.balance + amount)
         )
         await session.commit()
+
 
 async def deduct_balance(tg_id, amount):
     async with async_session() as session:
         await session.execute(
-            update(User).where(User.tg_id == tg_id).values(balance=User.balance - amount)
+            update(User)
+            .where(User.tg_id == tg_id)
+            .values(balance=User.balance - amount)
         )
         await session.commit()
 
@@ -33,14 +55,17 @@ async def select_user(tg_id):
     async with async_session() as session:
         return await session.scalar(select(User).where(User.tg_id == tg_id))
 
+
 async def get_test_plan():
     async with async_session() as session:
         # Assuming plan 1 is standard or specific test plan
         return await session.scalar(select(Plan).where(Plan.price > 0).limit(1))
 
+
 async def get_trial_plan():
     async with async_session() as session:
         return await session.scalar(select(Plan).where(Plan.price == 0).limit(1))
+
 
 async def set_user_bonus_received(user_id):
     async with async_session() as session:
@@ -48,6 +73,7 @@ async def set_user_bonus_received(user_id):
             update(User).where(User.id == user_id).values(received_bonus=True)
         )
         await session.commit()
+
 
 async def get_active_server():
     async with async_session() as session:
@@ -63,10 +89,7 @@ async def get_servers_with_stats() -> list:
     """
     async with async_session() as session:
         result = await session.execute(
-            select(
-                Server,
-                func.count(Subscription.id).label('sub_count')
-            )
+            select(Server, func.count(Subscription.id).label("sub_count"))
             .outerjoin(Subscription, Server.id == Subscription.server_id)
             .where(Server.is_active)
             .group_by(Server.id)
@@ -87,21 +110,26 @@ async def get_subscription_count_for_server(server_id: int) -> int:
     """
     async with async_session() as session:
         result = await session.execute(
-            select(func.count(Subscription.id))
-            .where(
+            select(func.count(Subscription.id)).where(
                 Subscription.server_id == server_id,
-                Subscription.status == SubscriptionStatus.ACTIVE
+                Subscription.status == SubscriptionStatus.ACTIVE,
             )
         )
         return result.scalar() or 0
 
+
 async def get_user_subscription(user_id):
     async with async_session() as session:
-        stmt = select(Subscription).where(
-            Subscription.user_id == user_id, 
-            Subscription.status == SubscriptionStatus.ACTIVE
-        ).order_by(Subscription.expires_at.desc())
+        stmt = (
+            select(Subscription)
+            .where(
+                Subscription.user_id == user_id,
+                Subscription.status == SubscriptionStatus.ACTIVE,
+            )
+            .order_by(Subscription.expires_at.desc())
+        )
         return await session.scalar(stmt)
+
 
 async def extend_subscription(subscription_id, days):
     async with async_session() as session:
@@ -112,18 +140,21 @@ async def extend_subscription(subscription_id, days):
             return True
         return False
 
-async def create_subscription(user_id, server_id, plan_id, uuid, email, inbound_id, key_url, is_trial=False):
+
+async def create_subscription(
+    user_id, server_id, plan_id, uuid, email, inbound_id, key_url, is_trial=False
+):
     async with async_session() as session:
         # Calculate expiry
         plan = await session.get(Plan, plan_id)
         if not plan:
             return None
-        
-        # If active sub exists, user might be extending or replacing. 
+
+        # If active sub exists, user might be extending or replacing.
         # For simplicity, we just create a new one. The profile logic should show the latest active one.
-        
+
         expires_at = datetime.now() + timedelta(days=plan.duration_days)
-        
+
         new_sub = Subscription(
             user_id=user_id,
             server_id=server_id,
@@ -133,11 +164,12 @@ async def create_subscription(user_id, server_id, plan_id, uuid, email, inbound_
             inbound_id=inbound_id,
             key_url=key_url,
             status=SubscriptionStatus.ACTIVE,
-            expires_at=expires_at
+            expires_at=expires_at,
         )
         session.add(new_sub)
         await session.commit()
         return new_sub
+
 
 async def get_referrals_count(user_id):
     async with async_session() as session:
@@ -145,7 +177,10 @@ async def get_referrals_count(user_id):
         # Since logic changed to just simple count
         # In real scaling app, use func.count
         from sqlalchemy import func
-        result = await session.execute(select(func.count(User.id)).where(User.referrer_id == user_id))
+
+        result = await session.execute(
+            select(func.count(User.id)).where(User.referrer_id == user_id)
+        )
         return result.scalar()
 
 
@@ -154,18 +189,18 @@ async def create_payment(
     amount: float,
     currency: str = "RUB",
     status: PaymentStatus = PaymentStatus.SUCCEEDED,
-    provider_id: str = None
+    provider_id: str = None,
 ) -> Payment:
     """
     Создание записи о платеже.
-    
+
     Args:
         user_id: ID пользователя в БД
         amount: Сумма платежа
         currency: Валюта
         status: Статус платежа
         provider_id: ID платежа в платёжной системе
-    
+
     Returns:
         Объект Payment
     """
@@ -175,7 +210,7 @@ async def create_payment(
             amount=amount,
             currency=currency,
             status=status,
-            provider_id=provider_id
+            provider_id=provider_id,
         )
         session.add(payment)
         await session.commit()
@@ -187,18 +222,18 @@ async def update_subscription_email(
     new_email: str,
     new_uuid: str,
     new_key_url: str,
-    new_inbound_id: int
+    new_inbound_id: int,
 ) -> bool:
     """
     Обновление данных подписки (email, uuid, key_url, inbound_id).
-    
+
     Args:
         subscription_id: ID подписки
         new_email: Новый email
         new_uuid: Новый UUID
         new_key_url: Новая ссылка ключа
         new_inbound_id: Новый inbound ID
-    
+
     Returns:
         True если успешно
     """
@@ -215,10 +250,7 @@ async def update_subscription_email(
 
 
 async def update_subscription_plan(
-    subscription_id: int,
-    plan_id: int,
-    duration_days: int,
-    data_limit_gb: int
+    subscription_id: int, plan_id: int, duration_days: int, data_limit_gb: int
 ) -> bool:
     """
     Обновление плана подписки с продлением срока.
@@ -244,6 +276,7 @@ async def update_subscription_plan(
 
 
 # ==================== Admin Functions ====================
+
 
 async def get_admin_by_tg_id(tg_id: int) -> Optional[Admin]:
     """Получить администратора по Telegram ID."""
@@ -288,7 +321,9 @@ async def delete_user_by_id(user_id: int) -> bool:
     """Удалить пользователя по ID (включая подписки и платежи)."""
     async with async_session() as session:
         # Сначала удаляем подписки
-        await session.execute(delete(Subscription).where(Subscription.user_id == user_id))
+        await session.execute(
+            delete(Subscription).where(Subscription.user_id == user_id)
+        )
         # Затем платежи
         await session.execute(delete(Payment).where(Payment.user_id == user_id))
         # И самого пользователя
@@ -320,7 +355,7 @@ async def add_server(
     username: str,
     password: str,
     location: str,
-    max_clients: Optional[int] = None
+    max_clients: Optional[int] = None,
 ) -> Server:
     """Добавить новый сервер."""
     async with async_session() as session:
@@ -330,7 +365,7 @@ async def add_server(
             username=username,
             password=password,
             location=location,
-            max_clients=max_clients
+            max_clients=max_clients,
         )
         session.add(server)
         await session.commit()
@@ -345,7 +380,7 @@ async def update_server(
     password: Optional[str] = None,
     location: Optional[str] = None,
     is_active: Optional[bool] = None,
-    max_clients: Optional[int] = None
+    max_clients: Optional[int] = None,
 ) -> bool:
     """Обновить данные сервера."""
     async with async_session() as session:
@@ -392,7 +427,7 @@ async def add_plan(
     price: float,
     duration_days: int,
     data_limit_gb: int = 0,
-    is_active: bool = True
+    is_active: bool = True,
 ) -> Plan:
     """Добавить новый тарифный план."""
     async with async_session() as session:
@@ -401,7 +436,7 @@ async def add_plan(
             price=price,
             duration_days=duration_days,
             data_limit_gb=data_limit_gb,
-            is_active=is_active
+            is_active=is_active,
         )
         session.add(plan)
         await session.commit()
@@ -414,7 +449,7 @@ async def update_plan(
     price: Optional[float] = None,
     duration_days: Optional[int] = None,
     data_limit_gb: Optional[int] = None,
-    is_active: Optional[bool] = None
+    is_active: Optional[bool] = None,
 ) -> bool:
     """Обновить тарифный план."""
     async with async_session() as session:
@@ -460,7 +495,7 @@ async def create_custom_subscription(
     key_url: str,
     expires_at: datetime,
     data_limit_gb: int = 0,
-    status: SubscriptionStatus = SubscriptionStatus.ACTIVE
+    status: SubscriptionStatus = SubscriptionStatus.ACTIVE,
 ) -> Optional[Subscription]:
     """Создать подписку с кастомными параметрами."""
     async with async_session() as session:
@@ -473,7 +508,7 @@ async def create_custom_subscription(
             inbound_id=inbound_id,
             key_url=key_url,
             status=status,
-            expires_at=expires_at
+            expires_at=expires_at,
         )
         session.add(subscription)
         await session.commit()
@@ -483,6 +518,8 @@ async def create_custom_subscription(
 async def delete_subscription(subscription_id: int) -> bool:
     """Удалить подписку."""
     async with async_session() as session:
-        await session.execute(delete(Subscription).where(Subscription.id == subscription_id))
+        await session.execute(
+            delete(Subscription).where(Subscription.id == subscription_id)
+        )
         await session.commit()
         return True

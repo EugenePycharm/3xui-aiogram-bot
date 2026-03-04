@@ -1,6 +1,7 @@
 """
 Хендлеры для создания подписки с кастомными параметрами.
 """
+
 import logging
 import uuid
 from datetime import datetime, timedelta
@@ -21,16 +22,17 @@ router = Router()
 
 # ==================== Создание подписки ====================
 
+
 @router.message(F.text == "➕ Создать подписку")
 async def start_create_subscription(message: Message, state: FSMContext) -> None:
     """Начать процесс создания подписки."""
     logger.info(f"Starting subscription creation for user {message.from_user.id}")
-    
+
     await message.answer(
         "📝 <b>Создание подписки</b>\n\n"
         "Введите <b>Telegram ID</b> пользователя:\n"
         "(или отправьте /cancel для отмены)",
-        parse_mode="HTML"
+        parse_mode="HTML",
     )
     await state.set_state("admin_create_sub_user_id")
     logger.info("State set to admin_create_sub_user_id")
@@ -52,16 +54,16 @@ async def cancel_creation(message: Message, state: FSMContext) -> None:
 async def create_subscription_fsm_handler(message: Message, state: FSMContext) -> None:
     """Универсальный хендлер для FSM создания подписки."""
     current_state = await state.get_state()
-    
+
     logger.info(f"FSM handler called. State: {current_state}, Message: {message.text}")
-    
+
     # Обработка ввода Telegram ID
     if current_state == "admin_create_sub_user_id":
         if not message.text.isdigit():
             await message.answer(
                 f"❌ <code>{message.text}</code> не является числом.\n\n"
                 "Введите корректный Telegram ID (только цифры):",
-                parse_mode="HTML"
+                parse_mode="HTML",
             )
             return
 
@@ -74,7 +76,7 @@ async def create_subscription_fsm_handler(message: Message, state: FSMContext) -
             await message.answer(
                 f"❌ Пользователь с ID <code>{tg_id}</code> не найден.\n\n"
                 "Введите корректный Telegram ID:",
-                parse_mode="HTML"
+                parse_mode="HTML",
             )
             return
 
@@ -96,7 +98,7 @@ async def create_subscription_fsm_handler(message: Message, state: FSMContext) -
             builder.row(
                 InlineKeyboardButton(
                     text=f"📡 {server.name} ({server.location})",
-                    callback_data=f"admin_select_server_{server.id}"
+                    callback_data=f"admin_select_server_{server.id}",
                 )
             )
         builder.row(
@@ -106,7 +108,7 @@ async def create_subscription_fsm_handler(message: Message, state: FSMContext) -
         await message.answer(
             f"✅ Пользователь: {user.full_name or 'Unknown'}\n\n"
             "Выберите сервер для подписки:",
-            reply_markup=builder.as_markup()
+            reply_markup=builder.as_markup(),
         )
         await state.set_state("admin_create_sub_server")
         return
@@ -162,7 +164,7 @@ async def process_server_select(callback: CallbackQuery, state: FSMContext) -> N
     await callback.message.answer(
         f"✅ Сервер: {server.name}\n\n"
         "Введите <b>лимит трафика в ГБ</b> (или 0 для безлимита):",
-        parse_mode="HTML"
+        parse_mode="HTML",
     )
     await state.set_state("admin_create_sub_traffic")
     await callback.answer()
@@ -179,7 +181,9 @@ async def show_calendar(message: Message, state: FSMContext) -> None:
     # Заголовок с месяцем и годом
     month_name = current_date.strftime("%B %Y")
     builder.row(
-        InlineKeyboardButton(text=f"📅 {month_name}", callback_data="admin_calendar_title")
+        InlineKeyboardButton(
+            text=f"📅 {month_name}", callback_data="admin_calendar_title"
+        )
     )
 
     # Навигация по месяцам
@@ -187,13 +191,24 @@ async def show_calendar(message: Message, state: FSMContext) -> None:
     next_month = (current_date.replace(day=28) + timedelta(days=4)).replace(day=1)
 
     builder.row(
-        InlineKeyboardButton(text="⬅️ Пред. месяц", callback_data=f"admin_calendar_prev_{prev_month.strftime('%Y-%m')}"),
-        InlineKeyboardButton(text="След. месяц ➡️", callback_data=f"admin_calendar_next_{next_month.strftime('%Y-%m')}"),
+        InlineKeyboardButton(
+            text="⬅️ Пред. месяц",
+            callback_data=f"admin_calendar_prev_{prev_month.strftime('%Y-%m')}",
+        ),
+        InlineKeyboardButton(
+            text="След. месяц ➡️",
+            callback_data=f"admin_calendar_next_{next_month.strftime('%Y-%m')}",
+        ),
     )
 
     # Дни недели
     weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
-    builder.row(*[InlineKeyboardButton(text=d, callback_data="admin_calendar_wd") for d in weekdays])
+    builder.row(
+        *[
+            InlineKeyboardButton(text=d, callback_data="admin_calendar_wd")
+            for d in weekdays
+        ]
+    )
 
     # Дни месяца
     year = current_date.year
@@ -208,13 +223,17 @@ async def show_calendar(message: Message, state: FSMContext) -> None:
     # Пустые ячейки до первого дня
     week_row = []
     for _ in range(first_day_offset):
-        week_row.append(InlineKeyboardButton(text="·", callback_data="admin_calendar_empty"))
+        week_row.append(
+            InlineKeyboardButton(text="·", callback_data="admin_calendar_empty")
+        )
 
     # Дни месяца
     for day in range(1, last_day.day + 1):
         date = datetime(year, month, day)
         is_today = date.date() == datetime.now().date()
-        is_selected = data.get("selected_date") and date.date() == data["selected_date"].date()
+        is_selected = (
+            data.get("selected_date") and date.date() == data["selected_date"].date()
+        )
 
         if is_selected:
             label = f"[{day}]"
@@ -226,7 +245,7 @@ async def show_calendar(message: Message, state: FSMContext) -> None:
         week_row.append(
             InlineKeyboardButton(
                 text=label,
-                callback_data=f"admin_calendar_day_{date.strftime('%Y-%m-%d')}"
+                callback_data=f"admin_calendar_day_{date.strftime('%Y-%m-%d')}",
             )
         )
 
@@ -240,7 +259,9 @@ async def show_calendar(message: Message, state: FSMContext) -> None:
 
     # Кнопки выбора времени
     builder.row(
-        InlineKeyboardButton(text="⏰ Установить время", callback_data="admin_calendar_set_time"),
+        InlineKeyboardButton(
+            text="⏰ Установить время", callback_data="admin_calendar_set_time"
+        ),
     )
 
     # Кнопка подтверждения
@@ -249,19 +270,16 @@ async def show_calendar(message: Message, state: FSMContext) -> None:
         builder.row(
             InlineKeyboardButton(
                 text=f"✅ Выбрать {selected.strftime('%d.%m.%Y')}",
-                callback_data="admin_calendar_confirm"
+                callback_data="admin_calendar_confirm",
             )
         )
 
-    builder.row(
-        InlineKeyboardButton(text="❌ Отмена", callback_data="admin_cancel")
-    )
+    builder.row(InlineKeyboardButton(text="❌ Отмена", callback_data="admin_cancel"))
 
     await message.answer(
-        "📅 <b>Выберите дату окончания подписки:</b>\n\n"
-        "• — сегодня, [день] — выбрано",
+        "📅 <b>Выберите дату окончания подписки:</b>\n\n• — сегодня, [день] — выбрано",
         reply_markup=builder.as_markup(),
-        parse_mode="HTML"
+        parse_mode="HTML",
     )
 
 
@@ -308,8 +326,7 @@ async def calendar_select_day(callback: CallbackQuery, state: FSMContext) -> Non
 async def calendar_set_time(callback: CallbackQuery, state: FSMContext) -> None:
     """Установить время."""
     await callback.message.answer(
-        "⏰ Введите время в формате <b>ЧЧ:ММ</b> (например, 14:30):",
-        parse_mode="HTML"
+        "⏰ Введите время в формате <b>ЧЧ:ММ</b> (например, 14:30):", parse_mode="HTML"
     )
     await state.set_state("admin_create_sub_time")
     await callback.answer()
@@ -319,10 +336,10 @@ async def calendar_set_time(callback: CallbackQuery, state: FSMContext) -> None:
 async def process_time_input(message: Message, state: FSMContext) -> None:
     """Обработка ввода времени."""
     current_state = await state.get_state()
-    
+
     if current_state != "admin_create_sub_time":
         return
-    
+
     try:
         hours, minutes = map(int, message.text.strip().split(":"))
         if not (0 <= hours <= 23 and 0 <= minutes <= 59):
@@ -420,7 +437,7 @@ async def create_subscription_final(message: Message, state: FSMContext) -> None
         total_gb=traffic_gb,
         expiry_time=expiry_time_ms,
         enable=True,
-        sub_id=email
+        sub_id=email,
     )
 
     if not success:
@@ -430,13 +447,19 @@ async def create_subscription_final(message: Message, state: FSMContext) -> None
         return
 
     # Генерируем ссылку
-    from app.utils import generate_vless_link, get_subscription_link, get_port_from_stream, extract_base_host
+    from app.utils import (
+        generate_vless_link,
+        get_subscription_link,
+        get_port_from_stream,
+        extract_base_host,
+    )
 
     base_host = extract_base_host(server.api_url)
-    port = get_port_from_stream(target_inbound.get("streamSettings", "{}"), default_port=443)
+    port = get_port_from_stream(
+        target_inbound.get("streamSettings", "{}"), default_port=443
+    )
     vless_link = generate_vless_link(
-        client_uuid, base_host, port, email,
-        target_inbound.get("streamSettings")
+        client_uuid, base_host, port, email, target_inbound.get("streamSettings")
     )
 
     # Создаём подписку в БД
@@ -448,7 +471,7 @@ async def create_subscription_final(message: Message, state: FSMContext) -> None
         inbound_id=target_inbound["id"],
         key_url=vless_link,
         expires_at=expires_at,
-        data_limit_gb=traffic_gb
+        data_limit_gb=traffic_gb,
     )
 
     if subscription:
@@ -462,7 +485,7 @@ async def create_subscription_final(message: Message, state: FSMContext) -> None
             f"📅 Истекает: {expires_at.strftime('%d.%m.%Y %H:%M')}\n\n"
             f"🔗 Ссылка: <code>{sub_link}</code>\n\n"
             f"VLESS ключ:\n<code>{vless_link}</code>",
-            parse_mode="HTML"
+            parse_mode="HTML",
         )
     else:
         await message.answer("❌ Ошибка сохранения подписки в БД")

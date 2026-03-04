@@ -1,6 +1,7 @@
 """
 Хендлеры для обработки платежей.
 """
+
 import logging
 
 from aiogram import F, Router, Bot
@@ -18,10 +19,7 @@ router = Router()
 
 
 @router.pre_checkout_query()
-async def pre_checkout_query(
-    pre_checkout_q: PreCheckoutQuery,
-    bot: Bot
-) -> None:
+async def pre_checkout_query(pre_checkout_q: PreCheckoutQuery, bot: Bot) -> None:
     """
     Подтверждение pre-checkout запроса от Telegram.
 
@@ -52,7 +50,7 @@ async def successful_payment(message: Message, bot: Bot) -> None:
     plan_id = int(parts[1])
     tg_id = int(parts[2])
     balance_used = float(parts[3]) if len(parts) > 3 else 0
-    
+
     # Сумма платежа в рублях (копейки / 100)
     payment_amount = message.successful_payment.total_amount / 100
     # Общая сумма с учётом баланса
@@ -72,7 +70,7 @@ async def successful_payment(message: Message, bot: Bot) -> None:
         amount=total_amount,
         currency="RUB",
         status=PaymentStatus.SUCCEEDED,
-        provider_id=message.successful_payment.telegram_payment_charge_id
+        provider_id=message.successful_payment.telegram_payment_charge_id,
     )
 
     # Активируем подписку
@@ -84,18 +82,22 @@ async def successful_payment(message: Message, bot: Bot) -> None:
             plan=plan,
             server=server,
             bot=bot,
-            replace_existing=True  # Обновляем существующую подписку
+            replace_existing=True,  # Обновляем существующую подписку
         )
 
         if success and subscription:
             # Отправляем уведомление об успешной активации
             base_host = extract_base_host(server.api_url)
             sub_link = get_subscription_link(base_host, subscription.email)
-            
+
             builder = InlineKeyboardBuilder()
             builder.row(InlineKeyboardButton(text="📥 Моя подписка", url=sub_link))
-            builder.row(InlineKeyboardButton(text="🔑 Посмотреть мой ключ", callback_data="view_key"))
-            
+            builder.row(
+                InlineKeyboardButton(
+                    text="🔑 Посмотреть мой ключ", callback_data="view_key"
+                )
+            )
+
             await message.answer(
                 f"✅ **Подписка активирована!**\n\n"
                 f"Тариф: {plan.name}\n"
@@ -103,7 +105,7 @@ async def successful_payment(message: Message, bot: Bot) -> None:
                 f"Срок действия: {subscription.expires_at.strftime('%d.%m.%Y')}\n\n"
                 f"Нажмите на кнопки ниже для доступа.",
                 reply_markup=builder.as_markup(),
-                parse_mode="Markdown"
+                parse_mode="Markdown",
             )
             return
 

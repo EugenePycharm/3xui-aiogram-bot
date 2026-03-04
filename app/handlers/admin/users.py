@@ -1,6 +1,7 @@
 """
 Хендлеры для управления пользователями.
 """
+
 import logging
 from aiogram import F, Router
 from aiogram.types import Message, CallbackQuery
@@ -18,6 +19,7 @@ router = Router()
 
 # ==================== Просмотр пользователей ====================
 
+
 @router.callback_query(F.data == "admin_users_list")
 async def show_users_list_callback(callback: CallbackQuery, state: FSMContext) -> None:
     """Показать список пользователей (callback)."""
@@ -32,7 +34,9 @@ async def show_users_list_callback(callback: CallbackQuery, state: FSMContext) -
     text = f"👥 <b>Пользователи ({len(users)})</b>\n\n"
     for i, user in enumerate(users[:10], 1):
         status = "✅" if user.received_bonus else "⏳"
-        text += f"{i}. {status} <code>{user.tg_id}</code> - {user.full_name or 'Unknown'}"
+        text += (
+            f"{i}. {status} <code>{user.tg_id}</code> - {user.full_name or 'Unknown'}"
+        )
         if user.username:
             text += f" (@{user.username})"
         text += f"\n   Баланс: {user.balance}₽\n"
@@ -44,8 +48,7 @@ async def show_users_list_callback(callback: CallbackQuery, state: FSMContext) -
             name = f"@{user.username}"
         builder.row(
             InlineKeyboardButton(
-                text=f"👤 {name}",
-                callback_data=f"admin_user_{user.id}"
+                text=f"👤 {name}", callback_data=f"admin_user_{user.id}"
             )
         )
 
@@ -54,11 +57,11 @@ async def show_users_list_callback(callback: CallbackQuery, state: FSMContext) -
             InlineKeyboardButton(text="Всех в меню", callback_data="admin_users_all")
         )
 
-    builder.row(
-        InlineKeyboardButton(text="🔙 В меню", callback_data="admin_menu")
-    )
+    builder.row(InlineKeyboardButton(text="🔙 В меню", callback_data="admin_menu"))
 
-    await callback.message.answer(text, reply_markup=builder.as_markup(), parse_mode="HTML")
+    await callback.message.answer(
+        text, reply_markup=builder.as_markup(), parse_mode="HTML"
+    )
     await callback.answer()
 
 
@@ -70,7 +73,9 @@ async def show_all_users(callback: CallbackQuery) -> None:
     text = f"👥 <b>Все пользователи ({len(users)})</b>\n\n"
     for i, user in enumerate(users, 1):
         status = "✅" if user.received_bonus else "⏳"
-        text += f"{i}. {status} <code>{user.tg_id}</code> - {user.full_name or 'Unknown'}"
+        text += (
+            f"{i}. {status} <code>{user.tg_id}</code> - {user.full_name or 'Unknown'}"
+        )
         if user.username:
             text += f" (@{user.username})"
         text += f" | Баланс: {user.balance}₽\n"
@@ -80,6 +85,7 @@ async def show_all_users(callback: CallbackQuery) -> None:
 
 
 # ==================== Карточка пользователя ====================
+
 
 @router.callback_query(F.data.startswith("admin_user_"))
 async def show_user_card(callback: CallbackQuery) -> None:
@@ -98,8 +104,10 @@ async def show_user_card(callback: CallbackQuery) -> None:
     # Получаем подписки пользователя
     async with rq.async_session() as session:
         from sqlalchemy import select
+
         result = await session.execute(
-            select(rq.Subscription).where(rq.Subscription.user_id == user_id)
+            select(rq.Subscription)
+            .where(rq.Subscription.user_id == user_id)
             .order_by(rq.Subscription.created_at.desc())
         )
         subscriptions = list(result.scalars().all())
@@ -107,6 +115,7 @@ async def show_user_card(callback: CallbackQuery) -> None:
     # Получаем рефералов
     async with rq.async_session() as session:
         from sqlalchemy import select, func
+
         ref_count = await session.scalar(
             select(func.count(rq.User.id)).where(rq.User.referrer_id == user_id)
         )
@@ -133,24 +142,34 @@ async def show_user_card(callback: CallbackQuery) -> None:
     # Клавиатура действий
     builder = InlineKeyboardBuilder()
     builder.row(
-        InlineKeyboardButton(text="✏️ Изменить баланс", callback_data=f"admin_edit_balance_{user_id}"),
+        InlineKeyboardButton(
+            text="✏️ Изменить баланс", callback_data=f"admin_edit_balance_{user_id}"
+        ),
     )
     builder.row(
-        InlineKeyboardButton(text="📋 Все подписки", callback_data=f"admin_user_subs_{user_id}"),
+        InlineKeyboardButton(
+            text="📋 Все подписки", callback_data=f"admin_user_subs_{user_id}"
+        ),
     )
     builder.row(
-        InlineKeyboardButton(text="🗑 Удалить пользователя", callback_data=f"admin_delete_user_confirm_{user_id}"),
+        InlineKeyboardButton(
+            text="🗑 Удалить пользователя",
+            callback_data=f"admin_delete_user_confirm_{user_id}",
+        ),
     )
     builder.row(
         InlineKeyboardButton(text="🔙 Назад", callback_data="admin_users_list"),
         InlineKeyboardButton(text="🏠 В меню", callback_data="admin_menu"),
     )
 
-    await callback.message.answer(text, reply_markup=builder.as_markup(), parse_mode="HTML")
+    await callback.message.answer(
+        text, reply_markup=builder.as_markup(), parse_mode="HTML"
+    )
     await callback.answer()
 
 
 # ==================== Редактирование баланса ====================
+
 
 @router.callback_query(F.data.startswith("admin_edit_balance_"))
 async def start_edit_balance(callback: CallbackQuery, state: FSMContext) -> None:
@@ -174,7 +193,7 @@ async def start_edit_balance(callback: CallbackQuery, state: FSMContext) -> None
         f"Текущий баланс: {user.balance}₽\n\n"
         f"Введите <b>новый баланс</b> (число):\n"
         f"(или используйте +100 / -50 для изменения)",
-        parse_mode="HTML"
+        parse_mode="HTML",
     )
     await state.set_state("admin_edit_balance_value")
     await callback.answer()
@@ -186,7 +205,7 @@ async def process_edit_balance(message: Message, state: FSMContext) -> None:
     current_state = await state.get_state()
     if current_state != "admin_edit_balance_value":
         return
-    
+
     data = await state.get_data()
     user_id = data.get("edit_balance_user_id")
 
@@ -215,19 +234,21 @@ async def process_edit_balance(message: Message, state: FSMContext) -> None:
 
         user = await rq.get_user_by_id(user_id)
         await message.answer(
-            f"✅ Баланс изменён!\n\n"
-            f"Новый баланс: <b>{new_balance}₽</b>",
-            parse_mode="HTML"
+            f"✅ Баланс изменён!\n\nНовый баланс: <b>{new_balance}₽</b>",
+            parse_mode="HTML",
         )
 
     except ValueError:
-        await message.answer("❌ Введите корректное число (например, 500 или +100 или -50)")
+        await message.answer(
+            "❌ Введите корректное число (например, 500 или +100 или -50)"
+        )
         return
 
     await state.clear()
 
 
 # ==================== Удаление пользователя ====================
+
 
 @router.callback_query(F.data.startswith("admin_delete_user_confirm_"))
 async def confirm_delete_user(callback: CallbackQuery, state: FSMContext) -> None:
@@ -245,7 +266,9 @@ async def confirm_delete_user(callback: CallbackQuery, state: FSMContext) -> Non
 
     builder = InlineKeyboardBuilder()
     builder.row(
-        InlineKeyboardButton(text="❗️ Да, удалить", callback_data=f"admin_delete_user_exec_{user_id}"),
+        InlineKeyboardButton(
+            text="❗️ Да, удалить", callback_data=f"admin_delete_user_exec_{user_id}"
+        ),
     )
     builder.row(
         InlineKeyboardButton(text="❌ Отмена", callback_data=f"admin_user_{user_id}"),
@@ -260,7 +283,7 @@ async def confirm_delete_user(callback: CallbackQuery, state: FSMContext) -> Non
         f"• Историю платежей\n"
         f"• Данные пользователя",
         reply_markup=builder.as_markup(),
-        parse_mode="HTML"
+        parse_mode="HTML",
     )
     await callback.answer()
 
@@ -282,6 +305,7 @@ async def execute_delete_user(callback: CallbackQuery) -> None:
     # Получаем подписки для удаления из 3x-ui
     async with rq.async_session() as session:
         from sqlalchemy import select
+
         result = await session.execute(
             select(rq.Subscription).where(rq.Subscription.user_id == user_id)
         )
@@ -292,6 +316,7 @@ async def execute_delete_user(callback: CallbackQuery) -> None:
         server = await session.get(rq.Server, sub.server_id)
         if server:
             from app.api.three_x_ui import ThreeXUIClient
+
             client = ThreeXUIClient(server.api_url, server.username, server.password)
             if await client.login():
                 await client.delete_client(sub.inbound_id, sub.uuid)
@@ -300,11 +325,14 @@ async def execute_delete_user(callback: CallbackQuery) -> None:
     # Удаляем из БД
     await rq.delete_user_by_id(user_id)
 
-    await callback.message.answer(f"✅ Пользователь {user.full_name or 'Unknown'} удалён.")
+    await callback.message.answer(
+        f"✅ Пользователь {user.full_name or 'Unknown'} удалён."
+    )
     await callback.answer()
 
 
 # ==================== Подписки пользователя ====================
+
 
 @router.callback_query(F.data.startswith("admin_user_subs_"))
 async def show_user_subscriptions(callback: CallbackQuery) -> None:
@@ -322,8 +350,10 @@ async def show_user_subscriptions(callback: CallbackQuery) -> None:
 
     async with rq.async_session() as session:
         from sqlalchemy import select
+
         result = await session.execute(
-            select(rq.Subscription).where(rq.Subscription.user_id == user_id)
+            select(rq.Subscription)
+            .where(rq.Subscription.user_id == user_id)
             .order_by(rq.Subscription.created_at.desc())
         )
         subscriptions = list(result.scalars().all())
@@ -337,7 +367,7 @@ async def show_user_subscriptions(callback: CallbackQuery) -> None:
     text += f"Пользователь: {user.full_name or 'Unknown'}\n\n"
 
     for sub in subscriptions:
-        status_val = sub.status.value if hasattr(sub.status, 'value') else sub.status
+        status_val = sub.status.value if hasattr(sub.status, "value") else sub.status
         status_emoji = "✅" if status_val == "active" else "❌"
         text += f"{status_emoji} <b>{sub.email}</b>\n"
         text += f"    Сервер ID: {sub.server_id}\n"
@@ -346,8 +376,12 @@ async def show_user_subscriptions(callback: CallbackQuery) -> None:
 
     builder = InlineKeyboardBuilder()
     builder.row(
-        InlineKeyboardButton(text="🔙 К пользователю", callback_data=f"admin_user_{user_id}"),
+        InlineKeyboardButton(
+            text="🔙 К пользователю", callback_data=f"admin_user_{user_id}"
+        ),
     )
 
-    await callback.message.answer(text, reply_markup=builder.as_markup(), parse_mode="HTML")
+    await callback.message.answer(
+        text, reply_markup=builder.as_markup(), parse_mode="HTML"
+    )
     await callback.answer()

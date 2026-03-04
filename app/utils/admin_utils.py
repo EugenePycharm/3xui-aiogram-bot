@@ -1,6 +1,7 @@
 """
 Утилиты для админ-бота.
 """
+
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -75,7 +76,7 @@ def parse_traffic_input(traffic_str: str) -> int:
         # Если больше - возможно это уже байты
         if value > 10000:
             # Скорее всего это байты, конвертируем в ГБ
-            return int(value / (1024 ** 3))
+            return int(value / (1024**3))
         return int(value)
     except ValueError:
         return 0

@@ -1,6 +1,7 @@
 """
 Пакет утилит для VPN бота.
 """
+
 from app.utils.vpn import (
     generate_vless_link,
     get_subscription_link,

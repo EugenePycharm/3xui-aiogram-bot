@@ -1,6 +1,7 @@
 """
 Точка входа для запуска админ-бота.
 """
+
 import asyncio
 import logging
 import os
@@ -42,10 +43,10 @@ async def main() -> None:
     # Настройка логирования
     logging.basicConfig(
         level=getattr(logging, LOG_LEVEL, logging.INFO),
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[logging.StreamHandler(sys.stdout)]
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
     )
-    
+
     logging.info("Starting VPN Admin Bot...")
     logging.info(f"Log level: {LOG_LEVEL}")
 
@@ -57,8 +58,8 @@ async def main() -> None:
     await dp.start_polling(bot)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logging.info('Stopping admin bot...')
+        logging.info("Stopping admin bot...")

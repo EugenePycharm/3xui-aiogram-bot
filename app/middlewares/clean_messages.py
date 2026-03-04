@@ -2,6 +2,7 @@
 Middleware для автоматической очистки сообщений.
 Предотвращает захламление чата старыми сообщениями.
 """
+
 import logging
 from typing import Callable, Dict, Any, Awaitable
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 class CleanMessageMiddleware(BaseMiddleware):
     """
     Middleware для автоматической очистки старых сообщений.
-    
+
     Принцип работы:
     - При каждом сообщении от пользователя очищаем его старые сообщения от бота
     - Оставляем только последние N сообщений для каждого пользователя
@@ -25,7 +26,7 @@ class CleanMessageMiddleware(BaseMiddleware):
     def __init__(self, max_messages: int = 3):
         """
         Инициализация middleware.
-        
+
         Args:
             max_messages: Максимальное количество сообщений для хранения
         """
@@ -35,16 +36,16 @@ class CleanMessageMiddleware(BaseMiddleware):
         self,
         handler: Callable[[Message | CallbackQuery, Dict[str, Any]], Awaitable[None]],
         event: Message | CallbackQuery,
-        data: Dict[str, Any]
+        data: Dict[str, Any],
     ) -> Any:
         """
         Обработка события.
-        
+
         Args:
             handler: Следующий обработчик в цепочке
             event: Событие (сообщение или callback)
             data: Данные контекста
-        
+
         Returns:
             Результат выполнения обработчика
         """

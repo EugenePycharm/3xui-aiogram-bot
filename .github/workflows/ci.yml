@@ -31,8 +31,8 @@ jobs:
       - name: Установка ruff
         run: uv pip install ruff
 
-      - name: Запуск ruff (линтинг с автофиксом)
-        run: uv run ruff check --fix app/ run.py admin_run.py
+      - name: Запуск ruff (линтинг)
+        run: uv run ruff check app/ run.py admin_run.py
 
       - name: Запуск ruff (форматирование)
         run: uv run ruff format --check app/ run.py admin_run.py

@@ -1,6 +1,7 @@
 """
 Inline-клавиатуры для бота.
 """
+
 from typing import List
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -26,7 +27,7 @@ async def get_plans_keyboard(plans: List[Plan]) -> InlineKeyboardMarkup:
             keyboard.add(
                 InlineKeyboardButton(
                     text=f"{plan.name} - {plan.price} RUB",
-                    callback_data=f"buy_plan_{plan.id}"
+                    callback_data=f"buy_plan_{plan.id}",
                 )
             )
 
@@ -64,8 +65,7 @@ async def get_servers_keyboard(servers_with_stats: list) -> InlineKeyboardMarkup
 
         keyboard.add(
             InlineKeyboardButton(
-                text=button_text,
-                callback_data=f"select_server_{server.id}"
+                text=button_text, callback_data=f"select_server_{server.id}"
             )
         )
 
@@ -145,9 +145,7 @@ def get_subscription_keyboard(sub_link: str) -> InlineKeyboardMarkup:
         InlineKeyboardMarkup с кнопками подписки
     """
     keyboard = InlineKeyboardBuilder()
-    keyboard.row(
-        InlineKeyboardButton(text="📥 Моя подписка", url=sub_link)
-    )
+    keyboard.row(InlineKeyboardButton(text="📥 Моя подписка", url=sub_link))
     keyboard.row(
         InlineKeyboardButton(text="🔑 Посмотреть мой ключ", callback_data="view_key")
     )

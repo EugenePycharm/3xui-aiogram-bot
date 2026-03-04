@@ -1,6 +1,7 @@
 """
 Хендлеры для профиля пользователя.
 """
+
 from datetime import datetime
 
 from aiogram import F, Router
@@ -15,11 +16,11 @@ from app.utils import MessageCleaner, extract_base_host, get_subscription_link
 router = Router()
 
 
-@router.message(F.text == '👤 Профиль')
+@router.message(F.text == "👤 Профиль")
 async def profile(message: Message) -> None:
     """
     Показ профиля пользователя.
-    
+
     Args:
         message: Сообщение от пользователя
     """
@@ -36,19 +37,15 @@ async def profile(message: Message) -> None:
     await message.answer(text, reply_markup=markup, parse_mode="Markdown")
 
 
-def _build_profile_text(
-    user,
-    sub,
-    referrals_count: int
-) -> str:
+def _build_profile_text(user, sub, referrals_count: int) -> str:
     """
     Построение текста профиля.
-    
+
     Args:
         user: Объект пользователя
         sub: Объект подписки или None
         referrals_count: Количество рефералов
-    
+
     Returns:
         Текст профиля
     """
@@ -73,24 +70,24 @@ def _build_profile_text(
 def _build_profile_markup(sub) -> InlineKeyboardMarkup:
     """
     Построение клавиатуры профиля.
-    
+
     Args:
         sub: Объект подписки или None
-    
+
     Returns:
         InlineKeyboardMarkup
     """
     if sub:
         builder = InlineKeyboardBuilder()
-        
+
         base_host = extract_base_host(sub.server.api_url)
         sub_link = get_subscription_link(base_host, sub.email)
-        
+
+        builder.row(InlineKeyboardButton(text="📥 Моя подписка", url=sub_link))
         builder.row(
-            InlineKeyboardButton(text="📥 Моя подписка", url=sub_link)
-        )
-        builder.row(
-            InlineKeyboardButton(text="🔑 Посмотреть мой ключ", callback_data="view_key")
+            InlineKeyboardButton(
+                text="🔑 Посмотреть мой ключ", callback_data="view_key"
+            )
         )
         builder.row(
             InlineKeyboardButton(text="👥 Пригласить друга", callback_data="ref_link")
@@ -104,12 +101,12 @@ def _build_profile_markup(sub) -> InlineKeyboardMarkup:
 async def view_key(callback: CallbackQuery) -> None:
     """
     Показ ключа подписки.
-    
+
     Args:
         callback: Callback query от пользователя
     """
     sub = await rq.get_user_subscription(callback.from_user.id)
-    
+
     if sub:
         msg = (
             f"🔑 **Ваш ключ:**\n"

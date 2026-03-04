@@ -2,6 +2,7 @@
 Роутер для админ-бота.
 Собирает все роутеры админ-панели.
 """
+
 import logging
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -33,7 +34,7 @@ async def admin_start_command(message: Message, admin: Admin) -> None:
         f"Админ: {admin.username or admin.tg_id}\n\n"
         f"Выберите раздел:",
         reply_markup=get_admin_main_keyboard(),
-        parse_mode="HTML"
+        parse_mode="HTML",
     )
 
 
@@ -43,7 +44,7 @@ async def admin_panel_command(message: Message, admin: Admin) -> None:
     await message.answer(
         "🏠 <b>Панель администратора</b>\n\nВыберите раздел:",
         reply_markup=get_admin_main_keyboard(),
-        parse_mode="HTML"
+        parse_mode="HTML",
     )
 
 
@@ -53,7 +54,7 @@ async def admin_menu_callback(callback: CallbackQuery, admin: Admin) -> None:
     await callback.message.answer(
         "🏠 <b>Панель администратора</b>\n\nВыберите раздел:",
         reply_markup=get_admin_main_keyboard(),
-        parse_mode="HTML"
+        parse_mode="HTML",
     )
     await callback.answer()
 
@@ -70,7 +71,9 @@ async def show_users_list(message: Message) -> None:
     text = f"👥 <b>Пользователи ({len(users)})</b>\n\n"
     for i, user in enumerate(users[:10], 1):
         status = "✅" if user.received_bonus else "⏳"
-        text += f"{i}. {status} <code>{user.tg_id}</code> - {user.full_name or 'Unknown'}"
+        text += (
+            f"{i}. {status} <code>{user.tg_id}</code> - {user.full_name or 'Unknown'}"
+        )
         if user.username:
             text += f" (@{user.username})"
         text += f"\n   Баланс: {user.balance}₽\n"
@@ -113,7 +116,9 @@ async def show_plans_list(message: Message) -> None:
     text = f"💳 <b>Тарифные планы ({len(plans)})</b>\n\n"
     for plan in plans:
         status = "✅" if plan.is_active else "❌"
-        traffic = "∞ Безлимит" if plan.data_limit_gb <= 0 else f"{plan.data_limit_gb} ГБ"
+        traffic = (
+            "∞ Безлимит" if plan.data_limit_gb <= 0 else f"{plan.data_limit_gb} ГБ"
+        )
         text += f"{status} <b>{plan.name}</b>\n"
         text += f"   Цена: {plan.price}₽\n"
         text += f"   Срок: {plan.duration_days} дн.\n"
@@ -129,6 +134,7 @@ async def show_subscriptions_list(message: Message) -> None:
     async with rq.async_session() as session:
         from sqlalchemy import select
         from app.database.models import Subscription
+
         result = await session.execute(
             select(Subscription).order_by(Subscription.created_at.desc()).limit(10)
         )
@@ -145,7 +151,7 @@ async def show_subscriptions_list(message: Message) -> None:
         text += f"🔹 {user_name}\n"
         text += f"   Email: {sub.email}\n"
         text += f"   Истекает: {sub.expires_at.strftime('%d.%m.%Y')}\n"
-        status_value = sub.status.value if hasattr(sub.status, 'value') else sub.status
+        status_value = sub.status.value if hasattr(sub.status, "value") else sub.status
         text += f"   Статус: {status_value}\n\n"
 
     await message.answer(text, parse_mode="HTML")
@@ -160,6 +166,6 @@ async def add_server_button_handler(message: Message, state: FSMContext) -> None
         "📡 <b>Добавление сервера</b>\n\n"
         "Введите <b>название сервера</b> (например, Netherlands-1):\n"
         "(или /cancel для отмены)",
-        parse_mode="HTML"
+        parse_mode="HTML",
     )
     await state.set_state("admin_add_server_name")

@@ -1,6 +1,7 @@
 """
 Middleware для проверки прав администратора.
 """
+
 import logging
 from typing import Callable, Dict, Any, Awaitable
 
@@ -19,7 +20,7 @@ class AdminAuthMiddleware(BaseMiddleware):
         self,
         handler: Callable[[Message | CallbackQuery, Dict[str, Any]], Awaitable[Any]],
         event: Message | CallbackQuery,
-        data: Dict[str, Any]
+        data: Dict[str, Any],
     ) -> Any:
         # Получаем tg_id из сообщения или callback query
         if isinstance(event, Message):
@@ -38,14 +39,21 @@ class AdminAuthMiddleware(BaseMiddleware):
         logger.debug(f"Middleware: Admin lookup for {tg_id} returned {admin}")
 
         if not admin or not admin.is_active:
-            logger.warning(f"Попытка доступа к админ-панели от пользователя {tg_id} (@{username})")
+            logger.warning(
+                f"Попытка доступа к админ-панели от пользователя {tg_id} (@{username})"
+            )
             if isinstance(event, Message):
                 try:
-                    await event.answer("⛔ Доступ запрещён. Вы не являетесь администратором.")
+                    await event.answer(
+                        "⛔ Доступ запрещён. Вы не являетесь администратором."
+                    )
                 except Exception as e:
                     logger.error(f"Error sending answer: {e}")
             elif isinstance(event, CallbackQuery):
-                await event.answer("⛔ Доступ запрещён. Вы не являетесь администратором.", show_alert=True)
+                await event.answer(
+                    "⛔ Доступ запрещён. Вы не являетесь администратором.",
+                    show_alert=True,
+                )
             return None
 
         # Добавляем администратора в контекст

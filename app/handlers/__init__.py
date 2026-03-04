@@ -2,6 +2,7 @@
 Пакет хендлеров для VPN бота.
 Собирает все роутеры в один главный router.
 """
+
 from aiogram import Router
 
 from app.handlers.start import router as start_router
