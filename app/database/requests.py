@@ -51,7 +51,7 @@ async def set_user_bonus_received(user_id):
 
 async def get_active_server():
     async with async_session() as session:
-        return await session.scalar(select(Server).where(Server.is_active == True))
+        return await session.scalar(select(Server).where(Server.is_active))
 
 
 async def get_servers_with_stats() -> list:
@@ -61,7 +61,6 @@ async def get_servers_with_stats() -> list:
     Returns:
         Список кортежей (server, subscriptions_count)
     """
-    from sqlalchemy import func
     async with async_session() as session:
         result = await session.execute(
             select(
@@ -69,7 +68,7 @@ async def get_servers_with_stats() -> list:
                 func.count(Subscription.id).label('sub_count')
             )
             .outerjoin(Subscription, Server.id == Subscription.server_id)
-            .where(Server.is_active == True)
+            .where(Server.is_active)
             .group_by(Server.id)
             .order_by(Server.id)
         )
@@ -86,7 +85,6 @@ async def get_subscription_count_for_server(server_id: int) -> int:
     Returns:
         Количество подписок
     """
-    from sqlalchemy import func
     async with async_session() as session:
         result = await session.execute(
             select(func.count(Subscription.id))

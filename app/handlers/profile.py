@@ -9,7 +9,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton
 
 from app.database import requests as rq
-from app.keyboards import get_profile_keyboard, get_referral_keyboard
+from app.keyboards import get_referral_keyboard
 from app.utils import MessageCleaner, extract_base_host, get_subscription_link
 
 router = Router()
@@ -52,7 +52,7 @@ def _build_profile_text(
     Returns:
         Текст профиля
     """
-    text = f"👤 **Профиль**\n\n"
+    text = "👤 **Профиль**\n\n"
     text += f"🆔 ID: `{user.tg_id}`\n"
     text += f"💰 Баланс: {user.balance} RUB\n"
     text += f"👥 Приглашено друзей: {referrals_count}\n\n"
@@ -61,7 +61,7 @@ def _build_profile_text(
         expiry = sub.expires_at.strftime("%d.%m.%Y")
         days_left = (sub.expires_at - datetime.now()).days
 
-        text += f"🔑 **Активная подписка**\n"
+        text += "🔑 **Активная подписка**\n"
         text += f"📅 Истекает: {expiry} ({days_left} дн.)\n"
         text += f"🌍 Сервер: {sub.server.location}\n"
     else:

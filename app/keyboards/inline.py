@@ -6,7 +6,7 @@ from typing import List
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.database.models import Plan, Server
+from app.database.models import Plan
 
 
 async def get_plans_keyboard(plans: List[Plan]) -> InlineKeyboardMarkup:

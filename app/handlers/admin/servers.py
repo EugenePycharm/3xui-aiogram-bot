@@ -9,7 +9,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton
 
 from app.database import requests as rq
-from app.database.models import Admin
 
 logger = logging.getLogger(__name__)
 
@@ -206,7 +205,7 @@ async def show_server_card(callback: CallbackQuery) -> None:
     status = "✅ Активен" if server.is_active else "❌ Отключён"
     connection = "✅ Подключено" if login_success else "❌ Ошибка"
 
-    text = f"📡 <b>Карточка сервера</b>\n\n"
+    text = "📡 <b>Карточка сервера</b>\n\n"
     text += f"<b>ID:</b> <code>{server.id}</code>\n"
     text += f"<b>Название:</b> {server.name}\n"
     text += f"<b>Локация:</b> {server.location}\n"
@@ -362,7 +361,7 @@ async def process_edit_server_value(message: Message, state: FSMContext) -> None
     success = await rq.update_server(server_id, **kwargs)
 
     if success:
-        await message.answer(f"✅ Поле обновлено!")
+        await message.answer("✅ Поле обновлено!")
     else:
         await message.answer("❌ Ошибка при обновлении.")
 

@@ -3,7 +3,6 @@
 """
 import json
 import urllib.parse
-from typing import Dict, Any
 
 
 def generate_vless_link(

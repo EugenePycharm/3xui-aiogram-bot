@@ -9,7 +9,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton
 
 from app.database import requests as rq
-from app.database.models import Admin
+from app.database.models import SubscriptionStatus
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,6 @@ async def show_user_card(callback: CallbackQuery) -> None:
     # Получаем подписки пользователя
     async with rq.async_session() as session:
         from sqlalchemy import select
-        from app.database.models import Subscription
         result = await session.execute(
             select(rq.Subscription).where(rq.Subscription.user_id == user_id)
             .order_by(rq.Subscription.created_at.desc())
@@ -112,7 +111,7 @@ async def show_user_card(callback: CallbackQuery) -> None:
             select(func.count(rq.User.id)).where(rq.User.referrer_id == user_id)
         )
 
-    text = f"👤 <b>Карточка пользователя</b>\n\n"
+    text = "👤 <b>Карточка пользователя</b>\n\n"
     text += f"<b>ID:</b> <code>{user.tg_id}</code>\n"
     text += f"<b>Имя:</b> {user.full_name or 'Unknown'}\n"
     if user.username:
@@ -334,7 +333,7 @@ async def show_user_subscriptions(callback: CallbackQuery) -> None:
         await callback.answer()
         return
 
-    text = f"📋 <b>Подписки пользователя</b>\n\n"
+    text = "📋 <b>Подписки пользователя</b>\n\n"
     text += f"Пользователь: {user.full_name or 'Unknown'}\n\n"
 
     for sub in subscriptions:

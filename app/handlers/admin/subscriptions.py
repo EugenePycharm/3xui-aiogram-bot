@@ -4,16 +4,15 @@
 import logging
 import uuid
 from datetime import datetime, timedelta
-from aiogram import F, Router, Bot
+from aiogram import F, Router
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton
 
 from app.database import requests as rq
-from app.database.models import Server, SubscriptionStatus
 from app.api.three_x_ui import ThreeXUIClient
-from app.utils.admin_utils import parse_date_input, parse_traffic_input, format_datetime, generate_uuid
+from app.utils.admin_utils import parse_traffic_input, generate_uuid
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ async def start_create_subscription(message: Message, state: FSMContext) -> None
         parse_mode="HTML"
     )
     await state.set_state("admin_create_sub_user_id")
-    logger.info(f"State set to admin_create_sub_user_id")
+    logger.info("State set to admin_create_sub_user_id")
 
 
 @router.message(F.text == "/cancel")
@@ -158,7 +157,6 @@ async def process_server_select(callback: CallbackQuery, state: FSMContext) -> N
         await callback.answer("❌ Сервер не найден", show_alert=True)
         return
 
-    data = await state.get_data()
     await state.update_data(server_id=server_id, server_name=server.name)
 
     await callback.message.answer(
@@ -414,7 +412,6 @@ async def create_subscription_final(message: Message, state: FSMContext) -> None
     email = f"admin_{uuid.uuid4().hex[:8]}"
     client_uuid = generate_uuid()
     expiry_time_ms = int(expires_at.timestamp() * 1000)
-    total_bytes = int(traffic_gb * 1024 * 1024 * 1024) if traffic_gb > 0 else 0
 
     # Добавляем клиента в 3x-ui
     success, msg, _ = await client.add_client(

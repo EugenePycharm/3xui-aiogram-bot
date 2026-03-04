@@ -7,12 +7,10 @@ import os
 import sys
 
 from dotenv import load_dotenv
-from aiogram import Bot, Dispatcher, F
-from aiogram.filters import Command
+from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from app.database.models import create_tables, Admin
-from app.database import requests as rq
+from app.database.models import create_tables
 from app.handlers.admin import router as admin_router
 from app.middlewares.admin_auth import AdminAuthMiddleware
 

@@ -6,11 +6,8 @@ import logging
 from aiogram import F, Router, Bot
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import InlineKeyboardButton
 
 from app.database import requests as rq
-from app.database.models import Plan, Server
 from app.services.subscription import SubscriptionService
 from app.services.referral import ReferralService
 from app.keyboards import main_menu

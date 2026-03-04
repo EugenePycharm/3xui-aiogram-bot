@@ -3,7 +3,7 @@
 Собирает все роутеры админ-панели.
 """
 import logging
-from aiogram import F, Router, Bot
+from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -51,7 +51,7 @@ async def admin_panel_command(message: Message, admin: Admin) -> None:
 async def admin_menu_callback(callback: CallbackQuery, admin: Admin) -> None:
     """Вернуться в главное меню."""
     await callback.message.answer(
-        f"🏠 <b>Панель администратора</b>\n\nВыберите раздел:",
+        "🏠 <b>Панель администратора</b>\n\nВыберите раздел:",
         reply_markup=get_admin_main_keyboard(),
         parse_mode="HTML"
     )

@@ -2,15 +2,13 @@
 Хендлеры для обработки платежей.
 """
 import logging
-import os
-import json
 
 from aiogram import F, Router, Bot
 from aiogram.types import PreCheckoutQuery, Message, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.database import requests as rq
-from app.database.models import Plan, Server, PaymentStatus
+from app.database.models import Plan, PaymentStatus
 from app.services.subscription import SubscriptionService
 from app.utils import extract_base_host, get_subscription_link
 

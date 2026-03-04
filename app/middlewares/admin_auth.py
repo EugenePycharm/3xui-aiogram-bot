@@ -7,7 +7,6 @@ from typing import Callable, Dict, Any, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
 
-from app.database.models import Admin
 from app.database import requests as rq
 
 logger = logging.getLogger(__name__)

@@ -101,10 +101,10 @@ class ThreeXUIClient:
                     # Fallback to singular
                     url = f"{self.base_url}/panel/api/inbound/addClient"
                     async with self.session.post(url, json=payload) as resp2:
-                         try:
+                        try:
                             data = await resp2.json()
                             return data.get('success', False), data.get('msg', ''), client_uuid
-                         except:
+                        except Exception:
                             return False, f"Status {resp2.status} at {url}", client_uuid
 
                 try:
@@ -112,7 +112,7 @@ class ThreeXUIClient:
                     success = data.get('success', False)
                     msg = data.get('msg', '')
                     return success, msg, client_uuid
-                except:
+                except Exception:
                      return False, f"Invalid JSON. Status {resp.status}", client_uuid
 
         except Exception as e:
@@ -154,7 +154,8 @@ class ThreeXUIClient:
                     try:
                         data = await resp.json()
                         return data.get('success', False)
-                    except: pass
+                    except Exception:
+                        pass
         except Exception as e:
             print(f"Update client exception: {e}")
             pass
@@ -175,9 +176,12 @@ class ThreeXUIClient:
                 if resp.status == 200:
                     try:
                         data = await resp.json()
-                        if data.get('success'): return True
-                    except: pass
-        except: pass
+                        if data.get('success'):
+                            return True
+                    except Exception:
+                        pass
+        except Exception:
+            pass
         
         # Path 2: /panel/api/inbound/delClient/{inbound_id}/client/{client_uuid} (Some versions)
         # Not implementing complex fallback yet, usually path 1 works for 3x-ui

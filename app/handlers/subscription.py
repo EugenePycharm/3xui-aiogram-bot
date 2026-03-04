@@ -56,7 +56,6 @@ async def process_buy_plan(callback: CallbackQuery, state: FSMContext) -> None:
         callback: Callback query от пользователя
         state: FSM context
     """
-    from sqlalchemy import select
 
     plan_id = int(callback.data.split("_")[2])
 
@@ -97,7 +96,6 @@ async def process_server_selection(callback: CallbackQuery, state: FSMContext, b
         state: FSM context
         bot: Экземпляр бота
     """
-    from sqlalchemy import select
 
     server_id = int(callback.data.split("_")[2])
 
