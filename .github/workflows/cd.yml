@@ -10,8 +10,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_USER_BOT: ghcr.io/${{ github.repository_owner | lower }}/user-bot
-  IMAGE_ADMIN_BOT: ghcr.io/${{ github.repository_owner | lower }}/admin-bot
+  IMAGE_USER_BOT: ghcr.io/eugenepycharm/user-bot
+  IMAGE_ADMIN_BOT: ghcr.io/eugenepycharm/admin-bot
 
 jobs:
   build-and-push:
