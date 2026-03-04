@@ -51,13 +51,13 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile
-          failure-threshold: warning
+          failure-threshold: error
 
       - name: Валидация Dockerfile.admin
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile.admin
-          failure-threshold: warning
+          failure-threshold: error
 
       - name: Валидация docker-compose.yml
         run: |

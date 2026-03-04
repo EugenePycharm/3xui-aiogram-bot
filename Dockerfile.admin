@@ -5,7 +5,7 @@
 FROM python:3.12-slim-bookworm AS builder
 
 # Install uv for fast dependency management
-RUN pip install --no-cache-dir uv
+RUN pip install --no-cache-dir uv==0.5.14
 
 # Set working directory
 WORKDIR /build
@@ -32,7 +32,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
+    curl=7.88.1-10+deb12u7 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
