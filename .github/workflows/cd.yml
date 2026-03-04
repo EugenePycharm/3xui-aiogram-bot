@@ -10,8 +10,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_USER_BOT: ${{ github.repository }}/user-bot
-  IMAGE_ADMIN_BOT: ${{ github.repository }}/admin-bot
+  IMAGE_USER_BOT: ghcr.io/${{ github.repository_owner | lower }}/user-bot
+  IMAGE_ADMIN_BOT: ghcr.io/${{ github.repository_owner | lower }}/admin-bot
 
 jobs:
   build-and-push:
@@ -37,8 +37,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_USER_BOT }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_ADMIN_BOT }}
+            ${{ env.IMAGE_USER_BOT }}
+            ${{ env.IMAGE_ADMIN_BOT }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -61,8 +61,8 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_USER_BOT }}:${{ steps.meta.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_USER_BOT }}:latest
+            ${{ env.IMAGE_USER_BOT }}:${{ steps.meta.outputs.version }}
+            ${{ env.IMAGE_USER_BOT }}:latest
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -76,8 +76,8 @@ jobs:
           file: Dockerfile.admin
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_ADMIN_BOT }}:${{ steps.meta.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_ADMIN_BOT }}:latest
+            ${{ env.IMAGE_ADMIN_BOT }}:${{ steps.meta.outputs.version }}
+            ${{ env.IMAGE_ADMIN_BOT }}:latest
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
