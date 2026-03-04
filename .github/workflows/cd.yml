@@ -103,20 +103,20 @@ jobs:
       - name: Подготовка .env файла
         run: |
           # Создаём .env из secrets
-          echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" > .env
+          echo "YOOKASSA_TEST_TOKEN=${{ secrets.YOOKASSA_TEST_TOKEN }}" > .env
+          echo "YOOKASSA_LIVE_TOKEN=${{ secrets.YOOKASSA_LIVE_TOKEN }}" >> .env
+          echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
           echo "ADMIN_BOT_TOKEN=${{ secrets.ADMIN_BOT_TOKEN }}" >> .env
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+          echo "LOG_LEVEL=${{ secrets.LOG_LEVEL }}" >> .env
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
+          echo "ADMIN_TELEGRAM_IDS=${{ secrets.ADMIN_TELEGRAM_IDS }}" >> .env
           echo "SERVER_API_URL=${{ secrets.SERVER_API_URL }}" >> .env
           echo "SERVER_USERNAME=${{ secrets.SERVER_USERNAME }}" >> .env
           echo "SERVER_PASSWORD=${{ secrets.SERVER_PASSWORD }}" >> .env
           echo "SERVER_LOCATION=${{ secrets.SERVER_LOCATION }}" >> .env
           echo "SERVER_NAME=${{ secrets.SERVER_NAME }}" >> .env
           echo "SERVER_MAX_CLIENTS=${{ secrets.SERVER_MAX_CLIENTS }}" >> .env
-          echo "ADMIN_TELEGRAM_IDS=${{ secrets.ADMIN_TELEGRAM_IDS }}" >> .env
-          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
-          echo "LOG_LEVEL=${{ secrets.LOG_LEVEL }}" >> .env
 
       - name: Копирование файлов на сервер
         uses: appleboy/scp-action@v0.1.7
@@ -148,7 +148,7 @@ jobs:
             docker-compose down
             
             # Запуск новых контейнеров
-            docker-compose -f docker-compose.deploy.yml up -d
+            docker-compose -f docker-compose.deploy.yml up -d --force-recreate
             
             # Очистка старых образов
             docker image prune -f --filter "until=24h"

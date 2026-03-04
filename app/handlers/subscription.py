@@ -123,9 +123,9 @@ async def process_server_selection(
         )
         return
 
-    # Частичная оплата через YooKassa
+    # Частичная оплата через Yoo
     await _pay_with_yookassa(
-        callback=callback, user=user, plan=plan, server=server, bot=bot
+        callback=callback, user=user, plan=plan, bot=bot
     )
 
 
@@ -190,10 +190,10 @@ async def _pay_with_balance(
 
 
 async def _pay_with_yookassa(
-    callback: CallbackQuery, user, plan: Plan, server: Server, bot: Bot
+    callback: CallbackQuery, user, plan: Plan, bot: Bot
 ) -> None:
     """
-    Оплата подписки через YooKassa (с доплатой).
+    Оплата подписки через (с доплатой).
 
     Args:
         callback: Callback query
