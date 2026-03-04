@@ -1,0 +1,88 @@
+# CI: Проверка кода и Docker-артефактов
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint:
+    name: Линтинг и проверка типов
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout кода
+        uses: actions/checkout@v4
+
+      - name: Установка Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Установка uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+
+      - name: Установка зависимостей
+        run: uv sync --dev
+
+      - name: Запуск ruff (линтинг)
+        run: uv run ruff check app/ run.py admin_run.py
+
+      - name: Запуск ruff (форматирование)
+        run: uv run ruff format --check app/ run.py admin_run.py
+
+      - name: Установка mypy
+        run: uv pip install mypy sqlalchemy2-stubs
+
+      - name: Проверка типов (mypy)
+        run: uv run mypy app/ --ignore-missing-imports --python-version 3.12
+
+  docker:
+    name: Валидация Docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout кода
+        uses: actions/checkout@v4
+
+      - name: Валидация Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: warning
+
+      - name: Валидация Dockerfile.admin
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile.admin
+          failure-threshold: warning
+
+      - name: Валидация docker-compose.yml
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          echo "docker-compose.yml валиден"
+
+      - name: Валидация docker-compose.prod.yml
+        run: |
+          docker compose -f docker-compose.prod.yml config --quiet
+          echo "docker-compose.prod.yml валиден"
+
+  security:
+    name: Проверка безопасности зависимостей
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout кода
+        uses: actions/checkout@v4
+
+      - name: Установка uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+
+      - name: Установка зависимостей
+        run: uv sync
+
+      - name: Проверка уязвимостей (pip-audit)
+        run: uv pip install pip-audit && uv run pip-audit
