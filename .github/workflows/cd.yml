@@ -127,7 +127,6 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           source: "docker-compose.prod.yml,.env"
           target: ${{ secrets.DEPLOY_PATH }}
-          strip_components: 1
 
       - name: Деплой приложения на сервере
         uses: appleboy/ssh-action@v1.0.3
