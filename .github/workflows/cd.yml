@@ -140,25 +140,25 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
             
             # Логин в GHCR
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             # Pull новых образов
-            docker compose -f docker-compose.prod.yml pull
+            docker-compose -f docker-compose.prod.yml pull
             
             # Остановка старых контейнеров
-            docker compose -f docker-compose.prod.yml down
+            docker-compose -f docker-compose.prod.yml down
             
             # Инициализация БД (если нужно)
-            docker compose -f docker-compose.prod.yml run --rm db-init || true
+            docker-compose -f docker-compose.prod.yml run --rm db-init || true
             
             # Запуск новых контейнеров
-            docker compose -f docker-compose.prod.yml up -d
+            docker-compose -f docker-compose.prod.yml up -d
             
             # Очистка старых образов
             docker image prune -f --filter "until=24h"
             
             # Проверка статуса
-            docker compose -f docker-compose.prod.yml ps
+            docker-compose -f docker-compose.prod.yml ps
 
       - name: Уведомление о статусе деплоя
         if: always()
