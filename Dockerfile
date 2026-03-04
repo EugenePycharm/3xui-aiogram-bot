@@ -32,7 +32,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl=7.88.1-10+deb12u7 \
+    curl \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 

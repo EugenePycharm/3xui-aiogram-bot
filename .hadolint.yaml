@@ -3,4 +3,4 @@
 
 ignored:
   - DL3013  # Pin versions in pip (uv обновляется часто, хотим последнюю)
-  - DL3008  # Pin versions in apt (curl обновляется через base image)
+  - DL3008  # Pin versions in apt (ставим последнюю доступную версию)
