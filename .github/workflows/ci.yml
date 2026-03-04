@@ -41,7 +41,7 @@ jobs:
         run: uv pip install mypy sqlalchemy2-stubs
 
       - name: Проверка типов (mypy)
-        run: uv run mypy app/ --ignore-missing-imports --python-version 3.12 --disable-error-code=union-attr --disable-error-code=arg-type --disable-error-code=assignment
+        run: uv run mypy app/
 
   docker:
     name: Валидация Docker
