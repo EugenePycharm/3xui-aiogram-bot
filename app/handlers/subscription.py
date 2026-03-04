@@ -124,9 +124,7 @@ async def process_server_selection(
         return
 
     # Частичная оплата через Yoo
-    await _pay_with_yookassa(
-        callback=callback, user=user, plan=plan, bot=bot
-    )
+    await _pay_with_yookassa(callback=callback, user=user, plan=plan, bot=bot)
 
 
 async def _pay_with_balance(
