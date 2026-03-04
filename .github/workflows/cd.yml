@@ -125,7 +125,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          source: "docker-compose.prod.yml,.env"
+          source: "docker-compose.deploy.yml,.env"
           target: ${{ secrets.DEPLOY_PATH }}
 
       - name: Деплой приложения на сервере
@@ -142,22 +142,19 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             # Pull новых образов
-            docker-compose -f docker-compose.prod.yml pull
+            docker-compose pull
             
             # Остановка старых контейнеров
-            docker-compose -f docker-compose.prod.yml down
-            
-            # Инициализация БД (если нужно)
-            docker-compose -f docker-compose.prod.yml run --rm db-init || true
+            docker-compose down
             
             # Запуск новых контейнеров
-            docker-compose -f docker-compose.prod.yml up -d
+            docker-compose -f docker-compose.deploy.yml up -d
             
             # Очистка старых образов
             docker image prune -f --filter "until=24h"
             
             # Проверка статуса
-            docker-compose -f docker-compose.prod.yml ps
+            docker-compose -f docker-compose.deploy.yml ps
 
       - name: Уведомление о статусе деплоя
         if: always()

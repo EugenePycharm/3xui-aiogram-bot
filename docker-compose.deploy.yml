@@ -1,0 +1,72 @@
+# Docker Compose для деплоя с GHCR образами
+version: '3.8'
+
+services:
+  # Основной бот для пользователей
+  user-bot:
+    image: ghcr.io/eugenepycharm/user-bot:latest
+    container_name: vpn-user-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///data/bot.db
+      - LOG_LEVEL=INFO
+    volumes:
+      - bot-data:/app/data
+      - bot-logs:/app/logs
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Админ-бот для управления
+  admin-bot:
+    image: ghcr.io/eugenepycharm/admin-bot:latest
+    container_name: vpn-admin-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///data/bot.db
+      - LOG_LEVEL=INFO
+    volumes:
+      - bot-data:/app/data
+      - admin-logs:/app/logs
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  bot-network:
+    driver: bridge
+
+volumes:
+  bot-data:
+    name: vpn-bot-data
+    driver: local
+  bot-logs:
+    name: vpn-bot-logs
+    driver: local
+  admin-logs:
+    name: vpn-admin-logs
+    driver: local
